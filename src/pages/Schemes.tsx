@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Search,
   Heart,
@@ -11,11 +11,24 @@ import {
   Clock,
   AlertCircle,
   Sparkles,
+  Loader2,
+  X,
+  ExternalLink,
+  Calendar,
+  Users,
+  Info,
+  DollarSign,
+  FileCheck,
+  Building2,
+  Phone,
+  Mail,
+  Globe,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const categories = [
   { id: "health", icon: Heart, label: "Health", color: "destructive" },
@@ -24,32 +37,45 @@ const categories = [
   { id: "pension", icon: Wallet, label: "Pension", color: "warning" },
 ];
 
-const popularSchemes = [
-  {
-    id: 1,
-    name: "Pradhan Mantri Kisan Samman Nidhi (PM–KISAN)",
-    category: "Agriculture",
-    benefits: "Income support of ₹6,000/year to small & marginal farmers",
-    status: "Open",
-    deadline: "Mar 31, 2024",
-  },
-  {
-    id: 2,
-    name: "Ayushman Bharat",
-    category: "Health",
-    benefits: "₹5 Lakh health cover",
-    status: "Open",
-    deadline: "Ongoing",
-  },
-  {
-    id: 3,
-    name: "PM Kisan Samman",
-    category: "Farmer",
-    benefits: "₹6,000 annually",
-    status: "Open",
-    deadline: "Ongoing",
-  },
-];
+interface Scheme {
+  id: string;
+  name: string;
+  category: string;
+  benefits: string;
+  status: string;
+  deadline: string;
+  eligibility?: string;
+  howToApply?: string;
+  applicationUrl?: string;
+}
+
+interface SchemeDetails {
+  fullDescription: string;
+  objectives: string[];
+  benefits: {
+    monetary?: string;
+    nonMonetary: string[];
+  };
+  eligibilityCriteria: {
+    age?: string;
+    income?: string;
+    location?: string;
+    other: string[];
+  };
+  requiredDocuments: string[];
+  applicationProcess: Array<{ step: number; description: string }>;
+  importantDates: {
+    startDate?: string;
+    deadline: string;
+    lastUpdated?: string;
+  };
+  contactInfo: {
+    helpline?: string;
+    email?: string;
+    website?: string;
+  };
+  officialApplicationUrl: string;
+}
 
 const myApplications = [
   {
@@ -86,7 +112,156 @@ const applicationStatus = {
 
 export default function Schemes() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [schemes, setSchemes] = useState<Scheme[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [showAllSchemes, setShowAllSchemes] = useState(false);
+  const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
+  const [schemeDetails, setSchemeDetails] = useState<SchemeDetails | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchSchemes();
+  }, []);
+
+  const fetchSchemes = async (category?: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+      const prompt = `List current active Indian government schemes ${
+        category ? `for ${category} category` : "across all categories (Health, Housing, Farmer/Agriculture, Pension)"
+      }. For each scheme provide:
+1. Official scheme name (exact from official portal)
+2. Category (Health/Housing/Farmer/Pension)
+3. Key benefits (brief, under 100 characters)
+4. Current status (Open/Closed/Ongoing)
+5. Application deadline or "Ongoing"
+6. Brief eligibility criteria
+7. How to apply (brief)
+8. Official application URL (actual government portal)
+
+Format as JSON array with fields: name, category, benefits, status, deadline, eligibility, howToApply, applicationUrl.
+Provide at least 15-20 REAL active schemes with ACTUAL official URLs. Use current 2024-2025 data.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      // Extract JSON from response
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        const schemesData = JSON.parse(jsonMatch[0]);
+        const formattedSchemes = schemesData.map((scheme: any, index: number) => ({
+          id: `scheme-${index}`,
+          ...scheme,
+        }));
+        setSchemes(formattedSchemes);
+      } else {
+        throw new Error("Failed to parse schemes data");
+      }
+    } catch (err) {
+      console.error("Error fetching schemes:", err);
+      setError("Failed to load schemes. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSchemeDetails = async (scheme: Scheme) => {
+    try {
+      setLoadingDetails(true);
+      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+      const prompt = `Provide complete, accurate details for the Indian government scheme: "${scheme.name}"
+
+Fetch from official sources (myScheme portal, ministry websites, india.gov.in) and return comprehensive JSON with REAL information:
+{
+  "fullDescription": "detailed official description (200-300 words)",
+  "objectives": ["objective1", "objective2", "objective3"],
+  "benefits": {
+    "monetary": "specific amounts if applicable (e.g., ₹X per month, ₹Y subsidy)",
+    "nonMonetary": ["benefit1", "benefit2", "benefit3"]
+  },
+  "eligibilityCriteria": {
+    "age": "age range if applicable",
+    "income": "income limits if applicable",
+    "location": "applicable states/districts/all India",
+    "other": ["additional criteria"]
+  },
+  "requiredDocuments": ["Aadhaar card", "Income certificate", "etc"],
+  "applicationProcess": [
+    {"step": 1, "description": "Visit official portal"},
+    {"step": 2, "description": "Register/Login"},
+    {"step": 3, "description": "Fill application form"},
+    {"step": 4, "description": "Upload documents"},
+    {"step": 5, "description": "Submit application"}
+  ],
+  "importantDates": {
+    "startDate": "date or N/A",
+    "deadline": "date or Ongoing",
+    "lastUpdated": "recent update date"
+  },
+  "contactInfo": {
+    "helpline": "toll-free number",
+    "email": "official email",
+    "website": "official website URL"
+  },
+  "officialApplicationUrl": "ACTUAL direct link to application portal"
+}
+
+Provide REAL, accurate information from official government sources.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const details = JSON.parse(jsonMatch[0]);
+        setSchemeDetails(details);
+      } else {
+        throw new Error("Failed to parse scheme details");
+      }
+    } catch (err) {
+      console.error("Error fetching scheme details:", err);
+      setError("Failed to load scheme details.");
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const handleSchemeClick = (scheme: Scheme) => {
+    setSelectedScheme(scheme);
+    fetchSchemeDetails(scheme);
+  };
+
+  const handleApplyNow = () => {
+    if (schemeDetails?.officialApplicationUrl) {
+      window.open(schemeDetails.officialApplicationUrl, '_blank', 'noopener,noreferrer');
+    } else if (selectedScheme?.applicationUrl) {
+      window.open(selectedScheme.applicationUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+
+  const handleCategoryClick = (categoryId: string) => {
+    setSelectedCategory(categoryId === selectedCategory ? null : categoryId);
+    fetchSchemes(categoryId === selectedCategory ? undefined : categoryId);
+  };
+
+  const filteredSchemes = schemes.filter((scheme) =>
+    scheme.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    scheme.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    scheme.benefits.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const popularSchemes = filteredSchemes.slice(0, 5);
 
   return (
     <div className="bg-background min-h-screen overflow-x-hidden">
@@ -142,7 +317,10 @@ export default function Schemes() {
               key={cat.id}
               variant="interactive"
               size="sm"
-              className="flex-shrink-0 flex items-center gap-2 px-4 py-3"
+              onClick={() => handleCategoryClick(cat.id)}
+              className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 cursor-pointer transition-all ${
+                selectedCategory === cat.id ? 'ring-2 ring-primary' : ''
+              }`}
             >
               <div
                 className={`p-2 rounded-lg ${
@@ -175,97 +353,621 @@ export default function Schemes() {
         </div>
       </div>
 
-      {/* Popular Schemes Carousel */}
-      <div className="py-4">
-        <div className="flex items-center justify-between px-4 mb-3">
-          <h2 className="text-base font-semibold text-foreground">
-            Popular Schemes
-          </h2>
-          <button className="text-sm text-primary font-medium flex items-center gap-1">
-            View All <ChevronRight className="w-4 h-4" />
-          </button>
+      {/* Loading / Error States */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-        <div
-          ref={scrollRef}
-          className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 pb-2"
-        >
-          {popularSchemes.map((scheme) => (
-            <Card
-              key={scheme.id}
-              variant="elevated"
-              size="default"
-              className="flex-shrink-0 w-[75%] snap-center"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <Badge
-                  variant="outline"
-                  className="text-xs bg-primary/10 text-primary border-primary/30"
-                >
-                  {scheme.category}
-                </Badge>
-                <Badge
-                  variant="outline"
-                  className="text-xs bg-success/10 text-success border-success/30"
-                >
-                  {scheme.status}
-                </Badge>
-              </div>
-              <h3 className="font-semibold text-foreground text-lg mb-1">
-                {scheme.name}
-              </h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                {scheme.benefits}
-              </p>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  Deadline: {scheme.deadline}
-                </span>
-                <Button size="sm" variant="default">
-                  Apply Now
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      </div>
+      )}
 
-      {/* My Applications */}
-      <div className="px-4 py-4 pb-8">
-        <h2 className="text-base font-semibold text-foreground mb-3">
-          My Applications
-        </h2>
-        <div className="space-y-3">
-          {myApplications.map((app) => {
-            const status =
-              applicationStatus[app.status as keyof typeof applicationStatus];
-            const StatusIcon = status.icon;
-            return (
-              <Card key={app.id} variant="interactive" size="sm">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-muted rounded-lg">
-                    <FileText className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-foreground text-sm">
-                      {app.scheme}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Applied: {app.date}
-                    </p>
-                  </div>
+      {error && (
+        <div className="px-4 py-4">
+          <Card variant="elevated" className="border-destructive/50">
+            <div className="flex items-center gap-3 text-destructive">
+              <AlertCircle className="w-5 h-5" />
+              <p className="text-sm">{error}</p>
+            </div>
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => fetchSchemes()}
+              className="mt-3"
+            >
+              Retry
+            </Button>
+          </Card>
+        </div>
+      )}
+
+      {/* Popular Schemes Carousel */}
+      {!loading && !error && !showAllSchemes && (
+        <div className="py-4">
+          <div className="flex items-center justify-between px-4 mb-3">
+            <h2 className="text-base font-semibold text-foreground">
+              {selectedCategory ? `${selectedCategory} Schemes` : 'Popular Schemes'}
+            </h2>
+            <button 
+              onClick={() => setShowAllSchemes(true)}
+              className="text-sm text-primary font-medium flex items-center gap-1"
+            >
+              View All <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+          <div
+            ref={scrollRef}
+            className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 pb-2"
+          >
+            {popularSchemes.map((scheme) => (
+              <Card
+                key={scheme.id}
+                variant="elevated"
+                size="default"
+                className="flex-shrink-0 w-[75%] snap-center cursor-pointer"
+                onClick={() => handleSchemeClick(scheme)}
+              >
+                <div className="flex items-start justify-between mb-2">
                   <Badge
                     variant="outline"
-                    className={`text-xs ${status.color}`}
+                    className="text-xs bg-primary/10 text-primary border-primary/30"
                   >
-                    <StatusIcon className="w-3 h-3 mr-1" />
-                    {status.label}
+                    {scheme.category}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-xs bg-success/10 text-success border-success/30"
+                  >
+                    {scheme.status}
                   </Badge>
                 </div>
+                <h3 className="font-semibold text-foreground text-lg mb-1">
+                  {scheme.name}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {scheme.benefits}
+                </p>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    Deadline: {scheme.deadline}
+                  </span>
+                  <Button 
+                    size="sm" 
+                    variant="default"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSchemeClick(scheme);
+                    }}
+                  >
+                    View Details
+                  </Button>
+                </div>
               </Card>
-            );
-          })}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {/* All Schemes List View */}
+      {!loading && !error && showAllSchemes && (
+        <div className="px-4 py-4 pb-24">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-foreground">
+              All Schemes ({filteredSchemes.length})
+            </h2>
+            <Button 
+              size="sm" 
+              variant="ghost" 
+              onClick={() => setShowAllSchemes(false)}
+              className="h-8 w-8 p-0"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="space-y-3">
+            {filteredSchemes.map((scheme) => (
+              <Card
+                key={scheme.id}
+                variant="elevated"
+                size="default"
+                className="cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => handleSchemeClick(scheme)}
+              >
+                <div className="flex items-start justify-between mb-2">
+                  <Badge
+                    variant="outline"
+                    className="text-xs bg-primary/10 text-primary border-primary/30"
+                  >
+                    {scheme.category}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="text-xs bg-success/10 text-success border-success/30"
+                  >
+                    {scheme.status}
+                  </Badge>
+                </div>
+                <h3 className="font-semibold text-foreground text-base mb-1">
+                  {scheme.name}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {scheme.benefits}
+                </p>
+                {scheme.eligibility && (
+                  <p className="text-xs text-muted-foreground mb-2">
+                    <span className="font-medium">Eligibility:</span> {scheme.eligibility}
+                  </p>
+                )}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    Deadline: {scheme.deadline}
+                  </span>
+                  <Button 
+                    size="sm" 
+                    variant="default"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSchemeClick(scheme);
+                    }}
+                  >
+                    View Details
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* My Applications */}
+      {!showAllSchemes && (
+        <div className="px-4 py-4 pb-8">
+          <h2 className="text-base font-semibold text-foreground mb-3">
+            My Applications
+          </h2>
+          <div className="space-y-3">
+            {myApplications.map((app) => {
+              const status =
+                applicationStatus[app.status as keyof typeof applicationStatus];
+              const StatusIcon = status.icon;
+              return (
+                <Card key={app.id} variant="interactive" size="sm">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-muted rounded-lg">
+                      <FileText className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium text-foreground text-sm">
+                        {app.scheme}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Applied: {app.date}
+                      </p>
+                    </div>
+                    <Badge
+                      variant="outline"
+                      className={`text-xs ${status.color}`}
+                    >
+                      <StatusIcon className="w-3 h-3 mr-1" />
+                      {status.label}
+                    </Badge>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Scheme Details Popup/Modal */}
+      {selectedScheme && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
+          onClick={() => {
+            setSelectedScheme(null);
+            setSchemeDetails(null);
+          }}
+        >
+          <div 
+            className="bg-background w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="sticky top-0 bg-background border-b px-4 py-4 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-foreground pr-8">
+                {selectedScheme.name}
+              </h2>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setSelectedScheme(null);
+                  setSchemeDetails(null);
+                }}
+                className="h-8 w-8 p-0"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+
+            {/* Content */}
+            <div className="p-4 space-y-6">
+              {loadingDetails ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : schemeDetails ? (
+                <>
+                  {/* Status and Category */}
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                      {selectedScheme.category}
+                    </Badge>
+                    <Badge variant="outline" className="bg-success/10 text-success border-success/30">
+                      {selectedScheme.status}
+                    </Badge>
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Info className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold text-foreground">Description</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {schemeDetails.fullDescription}
+                    </p>
+                  </div>
+
+                  {/* Objectives */}
+                  {schemeDetails.objectives?.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileCheck className="w-5 h-5 text-primary" />
+                        <h3 className="font-semibold text-foreground">Objectives</h3>
+                      </div>
+                      <ul className="space-y-1">
+                        {schemeDetails.objectives.map((obj, idx) => (
+                          <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                            <span className="text-primary mt-1">•</span>
+                            <span>{obj}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Benefits */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <DollarSign className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold text-foreground">Benefits</h3>
+                    </div>
+                    {schemeDetails.benefits.monetary && (
+                      <p className="text-sm text-muted-foreground mb-2">
+                        <span className="font-medium">Monetary:</span> {schemeDetails.benefits.monetary}
+                      </p>
+                    )}
+                    {schemeDetails.benefits.nonMonetary?.length > 0 && (
+                      <ul className="space-y-1">
+                        {schemeDetails.benefits.nonMonetary.map((benefit, idx) => (
+                          <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                            <span className="text-primary mt-1">•</span>
+                            <span>{benefit}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {/* Eligibility */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold text-foreground">Eligibility Criteria</h3>
+                    </div>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      {schemeDetails.eligibilityCriteria.age && (
+                        <p><span className="font-medium">Age:</span> {schemeDetails.eligibilityCriteria.age}</p>
+                      )}
+                      {schemeDetails.eligibilityCriteria.income && (
+                        <p><span className="font-medium">Income:</span> {schemeDetails.eligibilityCriteria.income}</p>
+                      )}
+                      {schemeDetails.eligibilityCriteria.location && (
+                        <p><span className="font-medium">Location:</span> {schemeDetails.eligibilityCriteria.location}</p>
+                      )}
+                      {schemeDetails.eligibilityCriteria.other?.length > 0 && (
+                        <ul className="space-y-1 mt-2">
+                          {schemeDetails.eligibilityCriteria.other.map((criteria, idx) => (
+                            <li key={idx} className="flex items-start gap-2">
+                              <span className="text-primary mt-1">•</span>
+                              <span>{criteria}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Required Documents */}
+                  {schemeDetails.requiredDocuments?.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="w-5 h-5 text-primary" />
+                        <h3 className="font-semibold text-foreground">Required Documents</h3>
+                      </div>
+                      <ul className="space-y-1">
+                        {schemeDetails.requiredDocuments.map((doc, idx) => (
+                          <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                            <span className="text-primary mt-1">•</span>
+                            <span>{doc}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Application Process */}
+                  {schemeDetails.applicationProcess?.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <ChevronRight className="w-5 h-5 text-primary" />
+                        <h3 className="font-semibold text-foreground">How to Apply</h3>
+                      </div>
+                      <ol className="space-y-2">
+                        {schemeDetails.applicationProcess.map((step) => (
+                          <li key={step.step} className="text-sm text-muted-foreground flex gap-3">
+                            <span className="font-semibold text-primary min-w-[24px]">
+                              {step.step}.
+                            </span>
+                            <span>{step.description}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  )}
+
+                  {/* Important Dates */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Calendar className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold text-foreground">Important Dates</h3>
+                    </div>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      {schemeDetails.importantDates.startDate && (
+                        <p><span className="font-medium">Start Date:</span> {schemeDetails.importantDates.startDate}</p>
+                      )}
+                      <p><span className="font-medium">Deadline:</span> {schemeDetails.importantDates.deadline}</p>
+                      {schemeDetails.importantDates.lastUpdated && (
+                        <p><span className="font-medium">Last Updated:</span> {schemeDetails.importantDates.lastUpdated}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Contact Information */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Building2 className="w-5 h-5 text-primary" />
+                      <h3 className="font-semibold text-foreground">Contact Information</h3>
+                    </div>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      {schemeDetails.contactInfo.helpline && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-primary" />
+                          <span>{schemeDetails.contactInfo.helpline}</span>
+                        </div>
+                      )}
+                      {schemeDetails.contactInfo.email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="w-4 h-4 text-primary" />
+                          <span>{schemeDetails.contactInfo.email}</span>
+                        </div>
+                      )}
+                      {schemeDetails.contactInfo.website && (
+                        <div className="flex items-center gap-2">
+                          <Globe className="w-4 h-4 text-primary" />
+                          <a 
+                            href={schemeDetails.contactInfo.website}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary hover:underline"
+                          >
+                            {schemeDetails.contactInfo.website}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Apply Button */}
+                  <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t -mx-4 px-4">
+                    <Button 
+                      className="w-full"
+                      size="lg"
+                      onClick={handleApplyNow}
+                      disabled={!schemeDetails.officialApplicationUrl}
+                    >
+                      Apply Now
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </Button>
+                    {!schemeDetails.officialApplicationUrl && (
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        Application URL not available
+                      </p>
+                    )}
+                  </div>
+                  <div className="h-6">
+
+                  </div>
+                </>
+              ) : (
+                <div className="py-8 text-center text-muted-foreground">
+                  No details available
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+}
+
+const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
+const CACHE_DURATION = 3600000; // 1 hour
+
+interface SchemeCache {
+  data: any;
+  timestamp: number;
+}
+
+const cache = new Map<string, SchemeCache>();
+
+export const schemesService = {
+  async fetchSchemes(category?: string, query?: string) {
+    const cacheKey = `schemes-${category || 'all'}-${query || ''}`;
+    const cached = cache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.data;
+    }
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    const prompt = `Fetch real, current (2024-2025) Indian government schemes from official sources like myScheme portal, india.gov.in, data.gov.in, and ministry websites.
+    
+${category ? `Filter by category: ${category}` : 'Include all categories: Health, Housing, Agriculture/Farmer, Pension, Education, Employment'}
+${query ? `Search query: ${query}` : ''}
+
+For EACH scheme, provide ACCURATE information:
+1. Official scheme name (exact as on government portal)
+2. Category
+3. Brief description (under 150 chars)
+4. Key benefits with monetary amounts if applicable
+5. Primary eligibility criteria (age, income, location, etc.)
+6. Required documents list
+7. Current status (Active/Closed/Seasonal)
+8. Application deadline or "Ongoing"
+9. Official application URL (actual government portal link)
+10. Implementing ministry/department
+
+Return as JSON array with fields: name, category, description, benefits, eligibility, documents, status, deadline, applicationUrl, ministry.
+Provide 15-20 REAL active schemes. Prioritize central government schemes and major state schemes.`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) throw new Error("Invalid response format");
+    
+    const schemes = JSON.parse(jsonMatch[0]);
+    cache.set(cacheKey, { data: schemes, timestamp: Date.now() });
+    
+    return schemes;
+  },
+
+  async checkEligibility(schemeId: string, userProfile: UserProfile) {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    const prompt = `Analyze eligibility for scheme: ${schemeId}
+
+User Profile:
+- Age: ${userProfile.age}
+- Gender: ${userProfile.gender}
+- Annual Income: ₹${userProfile.income}
+- Occupation: ${userProfile.occupation}
+- State/Location: ${userProfile.location}
+- Category: ${userProfile.category}
+- Disability: ${userProfile.disability ? 'Yes' : 'No'}
+- Family Size: ${userProfile.familySize || 'Not specified'}
+
+Analyze against actual scheme rules and return JSON:
+{
+  "eligible": "Yes/Partial/No",
+  "score": 0-100,
+  "reasoning": "detailed explanation",
+  "matchedCriteria": ["criterion1", "criterion2"],
+  "unmatchedCriteria": ["criterion1"],
+  "recommendations": ["suggestion1", "suggestion2"]
+}`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    
+    if (!jsonMatch) throw new Error("Invalid eligibility response");
+    return JSON.parse(jsonMatch[0]);
+  },
+
+  async fetchSchemeDetails(schemeId: string, schemeName: string) {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    const prompt = `Provide complete details for: ${schemeName}
+
+Fetch from official sources and return comprehensive JSON:
+{
+  "fullDescription": "detailed description",
+  "objectives": ["objective1", "objective2"],
+  "benefits": {
+    "monetary": "amount details",
+    "nonMonetary": ["benefit1", "benefit2"]
+  },
+  "eligibilityCriteria": {
+    "age": "range",
+    "income": "threshold",
+    "location": "applicable states/districts",
+    "other": ["criterion1", "criterion2"]
+  },
+  "requiredDocuments": ["doc1", "doc2"],
+  "applicationProcess": [
+    {"step": 1, "description": "step 1 details"},
+    {"step": 2, "description": "step 2 details"}
+  ],
+  "importantDates": {
+    "startDate": "date",
+    "deadline": "date or Ongoing",
+    "lastUpdated": "date"
+  },
+  "contactInfo": {
+    "helpline": "number",
+    "email": "email",
+    "website": "url"
+  },
+  "officialApplicationUrl": "direct link to application portal"
+}`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    
+    if (!jsonMatch) throw new Error("Invalid details response");
+    return JSON.parse(jsonMatch[0]);
+  },
+
+  async searchByLifeEvent(query: string, userProfile?: Partial<UserProfile>) {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    const prompt = `User life event query: "${query}"
+${userProfile ? `\nUser context: Age ${userProfile.age}, Location ${userProfile.location}, Income ₹${userProfile.income}` : ''}
+
+Identify relevant Indian government schemes for this life situation.
+Return JSON array of scheme names and brief reasons for recommendation.
+Format: [{"scheme": "name", "relevance": "why it matches", "priority": "high/medium"}]`;
+
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    
+    if (!jsonMatch) return [];
+    return JSON.parse(jsonMatch[0]);
+  }
+};
+
+interface UserProfile {
+  age: number;
+  gender: string;
+  income: number;
+  occupation: string;
+  location: string;
+  category: string;
+  disability: boolean;
+  familySize?: number;
 }
