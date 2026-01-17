@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 
 export function GreetingSection() {
-  const [location, setLocation] = useState("Koramangala, Bangalore");
+  const [location, setLocation] = useState("Pala, Kottayam");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,21 +36,24 @@ export function GreetingSection() {
             } else {
               setLocation(
                 data.display_name?.split(",").slice(0, 2).join(",") ||
-                  "Your Location",
+                  "Pala, Kottayam",
               );
             }
           } catch (error) {
             console.error("Error fetching location:", error);
+            setLocation("Pala, Kottayam");
           } finally {
             setLoading(false);
           }
         },
         (error) => {
           console.error("Geolocation error:", error);
+          setLocation("Pala, Kottayam");
           setLoading(false);
         },
       );
     } else {
+      setLocation("Pala, Kottayam");
       setLoading(false);
     }
   }, []);
