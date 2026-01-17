@@ -18,6 +18,8 @@ import {
   BookOpen,
   CheckCircle,
   Loader2,
+  Activity,
+  TrendingUp,
 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -37,6 +39,12 @@ import {
 // Digital Safety Components
 import { DigitalSafetySection } from "@/components/digital-safety/DigitalSafetySection";
 
+// Heat Map Component
+import { HeatMapVisualization } from "@/components/HeatMapVisualization";
+
+// Heat Map Service
+import { fetchHeatmapReports, type ReportHeatmapData } from "@/lib/heatmapService";
+
 // Fix Leaflet marker icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -55,98 +63,78 @@ const emergencyContacts = [
   { name: "Women Helpline", number: "181", color: "secondary" },
 ];
 
-// Hazard types and their properties
-const HAZARD_TYPES = {
-  potholes: {
+// Report categories mapping to visual properties
+const REPORT_CATEGORIES = {
+  pothole: {
     label: "Potholes",
     icon: AlertCircle,
     color: "#F59E0B",
     emoji: "🕳️",
   },
-  stray_dogs: {
-    label: "Stray Dogs",
-    icon: AlertCircle,
-    color: "#EF4444",
-    emoji: "🐕",
-  },
-  robbers: {
-    label: "Crime Risk",
+  garbage: {
+    label: "Garbage",
     icon: AlertTriangle,
-    color: "#DC2626",
-    emoji: "🚨",
+    color: "#10B981",
+    emoji: "🗑️",
   },
   streetlight: {
-    label: "Poor Lighting",
+    label: "Streetlights",
     icon: Lightbulb,
     color: "#FBBF24",
     emoji: "💡",
   },
-  accidents: { label: "Accidents", icon: Car, color: "#F97316", emoji: "🚗" },
+  drainage: {
+    label: "Drainage",
+    icon: AlertCircle,
+    color: "#3B82F6",
+    emoji: "🌊",
+  },
+  water: {
+    label: "Water Leaks",
+    icon: AlertCircle,
+    color: "#06B6D4",
+    emoji: "💧",
+  },
+  noise: {
+    label: "Noise",
+    icon: AlertTriangle,
+    color: "#EF4444",
+    emoji: "🔊",
+  },
 };
 
-// Generate simulated hazard data around a location
-const generateHazardData = (
-  lat: number,
-  lng: number,
-  hazardType: string,
-  count: number = 20,
-) => {
-  const data = [];
-  const radiusInDegrees = 0.02; // ~2km radius
-
-  for (let i = 0; i < count; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const distance = Math.random() * radiusInDegrees;
-    const randomLat = lat + distance * Math.cos(angle);
-    const randomLng = lng + distance * Math.sin(angle);
-    const intensity = Math.random() * 0.7 + 0.3; // 0.3 to 1.0
-
-    data.push({
-      lat: randomLat,
-      lng: randomLng,
-      intensity,
-      type: hazardType,
-    });
-  }
-  return data;
-};
-
-// Heatmap Canvas Component
-const HeatmapCanvas = ({
+// Real Report Heatmap Canvas Component
+const ReportHeatmapCanvas = ({
   width = 300,
   height = 350,
   userLat,
   userLng,
-  hazardData,
-  visibleHazards,
+  reports,
+  visibleCategories,
 }: {
   width: number;
   height: number;
   userLat: number;
   userLng: number;
-  hazardData: Record<string, any[]>;
-  visibleHazards: Record<string, boolean>;
+  reports: ReportHeatmapData[];
+  visibleCategories: Record<string, boolean>;
 }) => {
   const mapRef = useRef<any>(null);
 
   useEffect(() => {
-    // Initialize map with unique ID based on timestamp to avoid conflicts
     const mapId = "map-container";
     const container = document.getElementById(mapId);
 
-    // Ensure we're not initializing inside a sheet/dialog
     if (container && !mapRef.current && !container.closest('[role="dialog"]')) {
       try {
-        // Initialize map
-        const mapInstance = L.map(mapId).setView([userLat, userLng], 15);
+        const mapInstance = L.map(mapId).setView([userLat, userLng], 13);
 
-        // Add tile layer
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution: "&copy; OpenStreetMap contributors",
           maxZoom: 19,
         }).addTo(mapInstance);
 
-        // Add user location marker
+        // User location marker
         L.circleMarker([userLat, userLng], {
           radius: 8,
           fillColor: "#60A5FA",
@@ -158,28 +146,35 @@ const HeatmapCanvas = ({
           .bindPopup("Your Location")
           .addTo(mapInstance);
 
-        // Add hazard markers
-        Object.entries(hazardData).forEach(([hazardType, points]) => {
-          if (!visibleHazards[hazardType]) return;
+        // Add real report markers
+        reports.forEach((report) => {
+          if (!visibleCategories[report.category]) return;
 
-          const hazardConfig =
-            HAZARD_TYPES[hazardType as keyof typeof HAZARD_TYPES];
-          if (!hazardConfig) return;
+          const categoryConfig =
+            REPORT_CATEGORIES[report.category as keyof typeof REPORT_CATEGORIES];
+          if (!categoryConfig) return;
 
-          points.forEach((point: any) => {
-            L.circleMarker([point.lat, point.lng], {
-              radius: 4 + point.intensity * 4,
-              fillColor: hazardConfig.color,
-              color: hazardConfig.color,
-              weight: 1,
-              opacity: point.intensity,
-              fillOpacity: point.intensity * 0.7,
-            })
-              .bindPopup(
-                `${hazardConfig.emoji} ${hazardConfig.label}<br/>Intensity: ${(point.intensity * 100).toFixed(0)}%`,
-              )
-              .addTo(mapInstance);
-          });
+          // Calculate intensity based on upvotes and duplicates
+          const intensity = Math.min(
+            0.3 + (report.upvotes * 0.1) + (report.duplicate_count * 0.05),
+            1.0
+          );
+
+          L.circleMarker([report.latitude, report.longitude], {
+            radius: 5 + intensity * 5,
+            fillColor: categoryConfig.color,
+            color: categoryConfig.color,
+            weight: 1,
+            opacity: 0.8,
+            fillOpacity: 0.6,
+          })
+            .bindPopup(
+              `${categoryConfig.emoji} ${categoryConfig.label}<br/>` +
+              `Upvotes: ${report.upvotes}<br/>` +
+              `Status: ${report.status}<br/>` +
+              `<small>${new Date(report.created_at).toLocaleDateString()}</small>`,
+            )
+            .addTo(mapInstance);
         });
 
         mapRef.current = mapInstance;
@@ -187,7 +182,14 @@ const HeatmapCanvas = ({
         console.error("Error initializing map:", error);
       }
     }
-  }, [userLat, userLng, hazardData, visibleHazards]);
+
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, [userLat, userLng, reports, visibleCategories]);
 
   return (
     <div
@@ -204,20 +206,21 @@ const HeatmapCanvas = ({
 
 // Overall Safety Score Component
 const SafetyScore = ({
-  hazardData,
-  visibleHazards,
+  reports,
+  visibleCategories,
 }: {
-  hazardData: Record<string, any[]>;
-  visibleHazards: Record<string, boolean>;
+  reports: ReportHeatmapData[];
+  visibleCategories: Record<string, boolean>;
 }) => {
-  let totalHazards = 0;
-  Object.entries(hazardData).forEach(([hazardType, points]) => {
-    if (visibleHazards[hazardType]) {
-      totalHazards += points.reduce((sum, p) => sum + p.intensity, 0);
-    }
-  });
-
-  const safetyScore = Math.max(0, 100 - totalHazards * 3);
+  // Calculate total hazard based on visible reports
+  const visibleReports = reports.filter(r => visibleCategories[r.category]);
+  const totalReports = visibleReports.length;
+  const totalUpvotes = visibleReports.reduce((sum, r) => sum + r.upvotes, 0);
+  const totalDuplicates = visibleReports.reduce((sum, r) => sum + r.duplicate_count, 0);
+  
+  // Safety score decreases with more reports, upvotes, and duplicates
+  const hazardScore = (totalReports * 2) + (totalUpvotes * 0.5) + (totalDuplicates * 0.3);
+  const safetyScore = Math.max(0, 100 - hazardScore);
   const safetyLevel =
     safetyScore >= 80
       ? "Very Safe"
@@ -291,65 +294,54 @@ export default function Safety() {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const [hazardData, setHazardData] = useState<Record<string, any[]>>({});
-  const [visibleHazards, setVisibleHazards] = useState<Record<string, boolean>>(
+  const [reports, setReports] = useState<ReportHeatmapData[]>([]);
+  const [visibleCategories, setVisibleCategories] = useState<Record<string, boolean>>(
     {
-      potholes: true,
-      stray_dogs: true,
-      robbers: true,
+      pothole: true,
+      garbage: true,
       streetlight: true,
-      accidents: true,
+      drainage: true,
+      water: true,
+      noise: true,
     },
   );
-  const [hazardSheetOpen, setHazardSheetOpen] = useState(false);
+  const [categorySheetOpen, setCategorySheetOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Get user's current location
+  // Get user's current location and fetch real reports
   useEffect(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
-        (position) => {
+        async (position) => {
           const { latitude, longitude } = position.coords;
           setUserLocation({ lat: latitude, lng: longitude });
 
-          // Generate hazard data for each type
-          const newHazardData: Record<string, any[]> = {};
-          Object.keys(HAZARD_TYPES).forEach((hazardType) => {
-            newHazardData[hazardType] = generateHazardData(
-              latitude,
-              longitude,
-              hazardType,
-            );
-          });
-          setHazardData(newHazardData);
+          // Fetch real reports from database
+          const result = await fetchHeatmapReports(5, latitude, longitude); // 5km radius
+          if (result.success && result.reports) {
+            setReports(result.reports);
+          }
           setLoading(false);
 
-          // Show toast notification
           toast({
             title: "Location Found",
-            description: `You're at ${latitude.toFixed(4)}° N, ${longitude.toFixed(4)}° E`,
+            description: `Loaded ${result.reports?.length || 0} active reports`,
             duration: 2000,
           });
         },
-        (error) => {
+        async (error) => {
           console.error("Geolocation error:", error);
-          // Fallback to Bangalore coordinates if geolocation fails
           const fallbackLat = 12.9716;
           const fallbackLng = 77.5946;
           setUserLocation({ lat: fallbackLat, lng: fallbackLng });
 
-          const newHazardData: Record<string, any[]> = {};
-          Object.keys(HAZARD_TYPES).forEach((hazardType) => {
-            newHazardData[hazardType] = generateHazardData(
-              fallbackLat,
-              fallbackLng,
-              hazardType,
-            );
-          });
-          setHazardData(newHazardData);
+          // Fetch reports with fallback location
+          const result = await fetchHeatmapReports(5, fallbackLat, fallbackLng);
+          if (result.success && result.reports) {
+            setReports(result.reports);
+          }
           setLoading(false);
 
-          // Show fallback location toast
           toast({
             title: "Using Fallback Location",
             description: "Enable location for accurate data",
@@ -358,12 +350,12 @@ export default function Safety() {
         },
       );
     }
-  }, []);
+  }, [toast]);
 
-  const toggleHazard = (hazardType: string) => {
-    setVisibleHazards((prev) => ({
+  const toggleCategory = (category: string) => {
+    setVisibleCategories((prev) => ({
       ...prev,
-      [hazardType]: !prev[hazardType],
+      [category]: !prev[category],
     }));
   };
 
@@ -379,8 +371,9 @@ export default function Safety() {
       {/* Tab Switcher */}
       <div className="px-4 pb-4">
         <Tabs defaultValue="safety" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="safety">Safety</TabsTrigger>
+            <TabsTrigger value="heatmap">Heat Map</TabsTrigger>
             <TabsTrigger value="digital">Digital Safety</TabsTrigger>
           </TabsList>
 
@@ -397,9 +390,9 @@ export default function Safety() {
                     </p>
                   </div>
                 </Card>
-              ) : userLocation && Object.keys(hazardData).length > 0 ? (
+              ) : userLocation && reports.length > 0 ? (
                 <>
-                  {/* Heatmap Canvas */}
+                  {/* Real Report Heatmap Canvas */}
                   <div
                     className="bg-card rounded-lg p-4 border border-border mb-4 relative"
                     data-map-wrapper="true"
@@ -407,27 +400,27 @@ export default function Safety() {
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                         <Map className="w-4 h-4 text-primary" />
-                        Safety Heatmap
+                        Civic Reports Map
                       </h3>
                       <Badge
                         variant="secondary"
-                        className="bg-green-100 text-green-700 border-green-300"
+                        className="bg-green-100 text-green-700 border-green-300 dark:bg-green-900/30 dark:text-green-300"
                       >
-                        Live
+                        {reports.length} Active
                       </Badge>
                     </div>
                     <div className="relative">
-                      {!hazardSheetOpen && (
-                        <HeatmapCanvas
+                      {!categorySheetOpen && (
+                        <ReportHeatmapCanvas
                           width={320}
                           height={350}
                           userLat={userLocation.lat}
                           userLng={userLocation.lng}
-                          hazardData={hazardData}
-                          visibleHazards={visibleHazards}
+                          reports={reports}
+                          visibleCategories={visibleCategories}
                         />
                       )}
-                      {hazardSheetOpen && (
+                      {categorySheetOpen && (
                         <div
                           style={{
                             width: "100%",
@@ -436,35 +429,35 @@ export default function Safety() {
                           className="rounded-lg overflow-hidden border border-border bg-muted flex items-center justify-center"
                         >
                           <p className="text-sm text-muted-foreground">
-                            Map hidden while viewing hazard info
+                            Map hidden while viewing category info
                           </p>
                         </div>
                       )}
                       {/* Safety Score Overlay */}
-                      {!hazardSheetOpen && (
+                      {!categorySheetOpen && (
                         <div className="absolute bottom-2 right-2 z-[9999]">
                           <SafetyScore
-                            hazardData={hazardData}
-                            visibleHazards={visibleHazards}
+                            reports={reports}
+                            visibleCategories={visibleCategories}
                           />
                         </div>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-3 flex items-center gap-2">
                       <span className="w-3 h-3 bg-primary rounded-full"></span>
-                      Your Location • 2km Radius View
+                      Your Location • 5km Radius • Real-Time Data
                     </p>
                   </div>
 
-                  {/* Hazard Information Trigger */}
+                  {/* Category Filter Trigger */}
                   <Card
                     className="bg-card border border-border mb-4 cursor-pointer hover:bg-muted/50 transition-colors"
-                    onClick={() => setHazardSheetOpen(true)}
+                    onClick={() => setCategorySheetOpen(true)}
                   >
                     <div className="flex items-center justify-between p-3">
                       <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                         <AlertTriangle className="w-4 h-4 text-orange-500" />
-                        Hazard Information
+                        Report Categories
                       </h3>
                       <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     </div>
@@ -485,39 +478,35 @@ export default function Safety() {
               )}
             </div>
 
-            {/* Hazard Information Sheet */}
-            {userLocation && Object.keys(hazardData).length > 0 && (
-              <Sheet open={hazardSheetOpen} onOpenChange={setHazardSheetOpen}>
+            {/* Category Filter Sheet */}
+            {userLocation && reports.length > 0 && (
+              <Sheet open={categorySheetOpen} onOpenChange={setCategorySheetOpen}>
                 <SheetContent
                   className="w-full sm:max-w-md overflow-y-auto"
-                  data-hazard-sheet="true"
+                  data-category-sheet="true"
                 >
                   <SheetHeader>
                     <SheetTitle className="flex items-center gap-2">
                       <AlertTriangle className="w-5 h-5 text-orange-500" />
-                      Hazard Information
+                      Report Categories
                     </SheetTitle>
                     <SheetDescription>
-                      View and manage hazard layers on the map
+                      View and filter civic issues by category
                     </SheetDescription>
                   </SheetHeader>
                   <div className="mt-6 space-y-3">
-                    {Object.entries(HAZARD_TYPES).map(([key, hazard]) => {
-                      const hazardPoints = hazardData[key] || [];
-                      const visibleCount = visibleHazards[key]
-                        ? hazardPoints.length
+                    {Object.entries(REPORT_CATEGORIES).map(([key, category]) => {
+                      const categoryReports = reports.filter(r => r.category === key);
+                      const visibleCount = visibleCategories[key]
+                        ? categoryReports.length
                         : 0;
-                      const avgIntensity =
-                        visibleCount > 0
-                          ? (
-                              (hazardPoints.reduce(
-                                (sum, p) => sum + p.intensity,
-                                0,
-                              ) /
-                                hazardPoints.length) *
-                              100
-                            ).toFixed(0)
-                          : 0;
+                      const totalUpvotes = categoryReports.reduce(
+                        (sum, r) => sum + r.upvotes,
+                        0
+                      );
+                      const avgUpvotes = categoryReports.length > 0
+                        ? (totalUpvotes / categoryReports.length).toFixed(1)
+                        : "0";
 
                       return (
                         <Card
@@ -528,17 +517,17 @@ export default function Safety() {
                             <div className="flex items-center gap-2">
                               <div
                                 className="w-4 h-4 rounded-full"
-                                style={{ backgroundColor: hazard.color }}
+                                style={{ backgroundColor: category.color }}
                               />
                               <span className="text-sm font-semibold text-foreground">
-                                {hazard.label}
+                                {category.emoji} {category.label}
                               </span>
                             </div>
                             <button
-                              onClick={() => toggleHazard(key)}
+                              onClick={() => toggleCategory(key)}
                               className="p-1 rounded hover:bg-muted transition-colors"
                             >
-                              {visibleHazards[key] ? (
+                              {visibleCategories[key] ? (
                                 <Eye className="w-5 h-5 text-primary" />
                               ) : (
                                 <EyeOff className="w-5 h-5 text-muted-foreground" />
@@ -548,10 +537,10 @@ export default function Safety() {
                           <div className="space-y-1">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-muted-foreground">
-                                Total Points
+                                Total Reports
                               </span>
                               <Badge variant="secondary">
-                                {hazardPoints.length}
+                                {categoryReports.length}
                               </Badge>
                             </div>
                             <div className="flex items-center justify-between text-xs">
@@ -562,17 +551,17 @@ export default function Safety() {
                             </div>
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-muted-foreground">
-                                Avg Intensity
+                                Avg Upvotes
                               </span>
                               <Badge
                                 variant="outline"
                                 style={{
-                                  backgroundColor: `${hazard.color}20`,
-                                  borderColor: hazard.color,
-                                  color: hazard.color,
+                                  backgroundColor: `${category.color}20`,
+                                  borderColor: category.color,
+                                  color: category.color,
                                 }}
                               >
-                                {avgIntensity}%
+                                {avgUpvotes}
                               </Badge>
                             </div>
                           </div>
@@ -732,6 +721,124 @@ export default function Safety() {
                 </Card>
               </div>
             </div>
+          </TabsContent>
+
+          {/* Heat Map Tab */}
+          <TabsContent value="heatmap" className="mt-4 pb-8">
+            {userLocation ? (
+              <div className="space-y-4">
+                {/* Heat Map Header */}
+                <div className="bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50 dark:from-red-950/20 dark:via-orange-950/20 dark:to-yellow-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                  <h2 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-red-600 dark:text-red-400" />
+                    Civic Issue Heat Map
+                  </h2>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    This real-time visualization shows the density and severity of reported civic issues in your area. 
+                    Darker red areas indicate hotspots where multiple citizens have reported the same problem, helping authorities 
+                    identify neglected zones that require immediate attention.
+                  </p>
+                </div>
+
+                {/* Key Features */}
+                <div className="grid grid-cols-1 gap-3">
+                  <Card className="p-3 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
+                    <div className="flex items-start gap-2">
+                      <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="text-sm font-semibold text-foreground">Real-Time Updates</h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Heat map automatically refreshes when new reports are submitted or existing ones are upvoted
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-3 bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="text-sm font-semibold text-foreground">Smart Clustering</h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Reports within 10-20 meters are automatically grouped to identify duplicate issues and problem hotspots
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <Card className="p-3 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                    <div className="flex items-start gap-2">
+                      <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <h4 className="text-sm font-semibold text-foreground">Priority Detection</h4>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Intensity calculated from report count, upvotes, and duplicates to highlight areas needing urgent action
+                        </p>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Heat Map Visualization */}
+                <HeatMapVisualization
+                  userLat={userLocation.lat}
+                  userLng={userLocation.lng}
+                  radiusKm={50}
+                  height="500px"
+                />
+
+                {/* How to Use */}
+                <Card className="p-4 bg-muted/50">
+                  <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-primary" />
+                    How to Use This Heat Map
+                  </h4>
+                  <ul className="space-y-2 text-xs text-muted-foreground">
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-0.5">•</span>
+                      <span><strong>Heat Layer:</strong> Color intensity shows problem density - red = high concentration, yellow = lower concentration</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-0.5">•</span>
+                      <span><strong>Cluster Markers:</strong> Numbered circles show grouped reports - click for detailed breakdown</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-0.5">•</span>
+                      <span><strong>Toggle Controls:</strong> Show/hide heat layer or clusters independently for clearer visualization</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-primary mt-0.5">•</span>
+                      <span><strong>Live Updates:</strong> Map refreshes automatically when new civic issues are reported nearby</span>
+                    </li>
+                  </ul>
+                </Card>
+
+                {/* For Authorities */}
+                <Card className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
+                  <div className="flex items-start gap-3">
+                    <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="text-sm font-bold text-foreground mb-2">For Government Officials & Authorities</h4>
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        This heat map serves as a civic intelligence tool to help you identify neglected zones, prioritize resource allocation, 
+                        and respond more effectively to community needs. Dark red hotspots indicate areas with repeated complaints requiring 
+                        immediate attention, particularly in rural or underserved regions where public awareness may be low.
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            ) : (
+              <Card className="p-6 bg-gradient-to-br from-yellow-100/50 to-orange-100/50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800">
+                <div className="text-center">
+                  <AlertTriangle className="w-12 h-12 text-yellow-600 dark:text-yellow-500 mx-auto mb-3" />
+                  <h3 className="font-semibold text-foreground mb-2">Location Required</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Please enable location services to view the heat map visualization
+                  </p>
+                </div>
+              </Card>
+            )}
           </TabsContent>
 
           {/* Digital Safety Tab */}

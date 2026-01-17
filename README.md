@@ -49,7 +49,7 @@ npm run dev
 bun run dev
 ```
 
-The application will be available at `http://localhost:5173`
+The application will be available at `http://localhost:8080`
 
 ## 📁 Project Structure
 
@@ -135,7 +135,7 @@ CivicAid prioritizes user privacy:
 
 ## 📄 License
 
-This project is part of the CodeKalaro Hackathon. All rights reserved.
+This project is part of the CodeKalari Hackathon. All rights reserved.
 
 ## 🙋 Support
 
