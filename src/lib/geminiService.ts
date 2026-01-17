@@ -565,3 +565,93 @@ Respond ONLY with valid JSON:
         };
     }
 }
+
+// --- Vision AI ---
+
+const VISION_MODEL_ID = "accounts/fireworks/models/qwen3-vl-235b-a22b-thinking";
+// Specific key for vision if provided, else fallback to main key
+const VISION_API_KEY = import.meta.env.VITE_FIREWORKS_VISION_API_KEY;
+
+export interface AIImageAnalysis {
+    category: string;
+    confidence: number;
+    description: string;
+    severity: "low" | "medium" | "high" | "critical";
+    location_context?: string;
+}
+
+/**
+ * Analyze an image (Base64) for civic issues
+ */
+export async function analyzeImageWithAI(imageBase64: string): Promise<AIImageAnalysis> {
+    console.log("👁️ Analyzing Image...");
+
+    // Format for Qwen2-VL on Fireworks
+    const messages = [
+        {
+            role: "user",
+            content: [
+                {
+                    type: "text",
+                    text: `Analyze this image for civic issues (potholes, garbage, broken streetlights, water leaks, etc.).
+                    
+Respond ONLY with valid JSON:
+{
+  "category": "pothole" | "garbage" | "streetlight" | "drainage" | "water" | "noise" | "other",
+  "confidence": number (0-100),
+  "description": "Brief, professional description of the issue observed",
+  "severity": "low" | "medium" | "high" | "critical",
+  "location_context": "Any visible landmarks or street signs (optional)"
+}`
+                },
+                {
+                    type: "image_url",
+                    image_url: {
+                        url: imageBase64 // Supports data:image/jpeg;base64,...
+                    }
+                }
+            ]
+        }
+    ];
+
+    try {
+        // We use a direct fetch here to allow using the specific VISION_API_KEY if needed, 
+        // or we could refactor callFireworksAPI. Let's do a direct call for safety/isolation.
+        const apiKeyToUse = VISION_API_KEY || fireworksApiKey || import.meta.env.VITE_FIREWORKS_API_KEY;
+
+        const response = await fetch(FIREWORKS_API_URL, {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${apiKeyToUse}`
+            },
+            body: JSON.stringify({
+                model: VISION_MODEL_ID,
+                max_tokens: 1024,
+                top_p: 1,
+                top_k: 40,
+                temperature: 0.5,
+                messages
+            })
+        });
+
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(`Vision API Error: ${err}`);
+        }
+
+        const data = await response.json();
+        const content = data.choices[0]?.message?.content || "";
+        console.log("👁️ Vision Response:", content);
+
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("Invalid Vision JSON");
+
+        return JSON.parse(jsonMatch[0]);
+
+    } catch (error) {
+        console.error("❌ Vision Analysis Error:", error);
+        throw error;
+    }
+}
