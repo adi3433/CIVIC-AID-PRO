@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Phone,
     Shield,
@@ -15,6 +15,8 @@ import {
     TrendingUp,
     PhoneCall,
     ChevronDown,
+    Sparkles,
+    Cpu,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +33,7 @@ import { RedFlagsEducation } from "./RedFlagsEducation";
 import { ScamDatabase } from "./ScamDatabase";
 import { ReportScam } from "./ReportScam";
 import { getScamStats } from "@/lib/scamDatabase";
+import { initializeAI, getAIStatus } from "@/lib/aiConfig";
 
 type DigitalSafetyView =
     | "home"
@@ -73,7 +76,14 @@ function BackButton({ onBack, title }: { onBack: () => void; title: string }) {
 
 export function DigitalSafetySection() {
     const [digitalView, setDigitalView] = useState<DigitalSafetyView>("home");
+    const [aiStatus, setAiStatus] = useState(getAIStatus());
     const stats = getScamStats();
+
+    // Initialize AI on component mount
+    useEffect(() => {
+        initializeAI();
+        setAiStatus(getAIStatus());
+    }, []);
 
     const renderContent = () => {
         switch (digitalView) {
@@ -109,8 +119,9 @@ export function DigitalSafetySection() {
                                         <h2 className="font-bold text-lg">AI-Powered Scam Protection</h2>
                                         <p className="text-sm text-white/80">{stats.totalReports.toLocaleString()}+ scams detected</p>
                                     </div>
-                                    <Badge className="bg-white/20 text-white border-white/30">
-                                        <Brain className="w-3 h-3 mr-1" />Live
+                                    <Badge className={aiStatus.enabled ? "bg-green-500/20 text-white border-green-300/50" : "bg-white/20 text-white border-white/30"}>
+                                        {aiStatus.enabled ? <Sparkles className="w-3 h-3 mr-1" /> : <Cpu className="w-3 h-3 mr-1" />}
+                                        {aiStatus.model}
                                     </Badge>
                                 </div>
                                 <div className="grid grid-cols-3 gap-2 mt-4">
@@ -134,8 +145,9 @@ export function DigitalSafetySection() {
                         <div>
                             <div className="flex items-center justify-between mb-3">
                                 <h3 className="font-semibold text-foreground">Scam Detection</h3>
-                                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700">
-                                    <Brain className="w-3 h-3 mr-1" />AI Powered
+                                <Badge variant="outline" className={aiStatus.enabled ? "text-xs bg-green-50 text-green-700 border-green-300" : "text-xs bg-blue-50 text-blue-700"}>
+                                    {aiStatus.enabled ? <Sparkles className="w-3 h-3 mr-1" /> : <Brain className="w-3 h-3 mr-1" />}
+                                    {aiStatus.enabled ? aiStatus.model : "Rule-based"}
                                 </Badge>
                             </div>
                             <div className="grid grid-cols-2 gap-3">
