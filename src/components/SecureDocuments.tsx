@@ -339,47 +339,52 @@ export default function SecureDocuments({ userId }: SecureDocumentsProps) {
               </Button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6 space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-3">
               {documents.map((doc, index) => (
                 <div
                   key={doc.id}
-                  className="flex items-center gap-4 p-4 bg-muted/30 rounded-xl hover:bg-muted/50 transition-all duration-200 animate-in slide-in-from-left"
+                  className="flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-muted/30 rounded-xl hover:bg-muted/50 transition-all duration-200 animate-in slide-in-from-left"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <FileText className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate mb-1">
-                      {doc.file_name}
-                    </p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1">
-                        <Lock className="w-3 h-3" />
-                        {formatSize(doc.file_size)}
-                      </span>
-                      <span>•</span>
-                      <span>{formatDate(doc.upload_date)}</span>
+                  {/* File Icon and Info - Full width on mobile */}
+                  <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className="p-3 bg-primary/10 rounded-lg flex-shrink-0">
+                      <FileText className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground break-words mb-2">
+                        {doc.file_name}
+                      </p>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1 whitespace-nowrap">
+                          <Lock className="w-3 h-3 flex-shrink-0" />
+                          {formatSize(doc.file_size)}
+                        </span>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="whitespace-nowrap">{formatDate(doc.upload_date)}</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  
+                  {/* Action Buttons - Stack on mobile, side-by-side on larger screens */}
+                  <div className="flex sm:flex-col md:flex-row items-stretch sm:items-end gap-2 sm:flex-shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
                       disabled={viewing === doc.document_id}
                       onClick={() => handleView(doc.document_id, doc.file_name)}
-                      className="hover:bg-primary/10 hover:text-primary transition-colors border-primary/20"
+                      className="flex-1 sm:flex-none hover:bg-primary/10 hover:text-primary transition-colors border-primary/20 min-w-[90px]"
                       title="View Document"
                     >
                       {viewing === doc.document_id ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                          <span className="text-xs">Loading...</span>
+                          <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                          <span className="text-xs font-medium">Loading...</span>
                         </>
                       ) : (
                         <>
-                          <Eye className="w-4 h-4 mr-1" />
-                          <span className="text-xs">View</span>
+                          <Eye className="w-4 h-4 mr-1.5" />
+                          <span className="text-xs font-medium">View</span>
                         </>
                       )}
                     </Button>
@@ -388,18 +393,18 @@ export default function SecureDocuments({ userId }: SecureDocumentsProps) {
                       variant="outline"
                       disabled={deleting === doc.id}
                       onClick={() => handleDelete(doc.id || '', doc.document_id)}
-                      className="hover:bg-destructive/10 hover:text-destructive transition-colors border-destructive/20"
+                      className="flex-1 sm:flex-none hover:bg-destructive/10 hover:text-destructive transition-colors border-destructive/20 min-w-[90px]"
                       title="Delete Document"
                     >
                       {deleting === doc.id ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                          <span className="text-xs">Deleting...</span>
+                          <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                          <span className="text-xs font-medium">Deleting...</span>
                         </>
                       ) : (
                         <>
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          <span className="text-xs">Delete</span>
+                          <Trash2 className="w-4 h-4 mr-1.5" />
+                          <span className="text-xs font-medium">Delete</span>
                         </>
                       )}
                     </Button>
