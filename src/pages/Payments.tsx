@@ -8,6 +8,7 @@ import { PaymentProfile, paymentsService, Utility, Bill } from "@/lib/paymentsSe
 import { UtilityCard } from "@/components/payments/UtilityCard";
 import { BillAnalysis } from "@/components/payments/BillAnalysis";
 import { AddUtilityModal } from "@/components/payments/AddUtilityModal";
+import { DodoCheckout } from "@/components/payments/DodoCheckout";
 
 type Tab = "overview" | "safety";
 
@@ -15,6 +16,8 @@ export default function Payments() {
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<PaymentProfile | null>(null);
     const [activeTab, setActiveTab] = useState<Tab>("overview");
+    const [payModalOpen, setPayModalOpen] = useState(false);
+    const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
 
     useEffect(() => {
         loadData();
@@ -33,8 +36,13 @@ export default function Payments() {
 
     const handlePay = (e: React.MouseEvent, bill: Bill) => {
         e.stopPropagation();
-        alert(`Starting payment of ₹${bill.amount} for ${bill.period}`);
-        // Here we would check safety of the link
+        setSelectedBill(bill);
+        setPayModalOpen(true);
+    };
+
+    const handlePaymentSuccess = () => {
+        alert("Payment processed successfully!");
+        loadData();
     };
 
     if (loading) {
@@ -47,6 +55,12 @@ export default function Payments() {
 
     return (
         <div className="bg-background min-h-screen pb-24">
+            <DodoCheckout
+                open={payModalOpen}
+                onOpenChange={setPayModalOpen}
+                bill={selectedBill}
+                onSuccess={handlePaymentSuccess}
+            />
             {/* Header Area */}
             <div className="bg-primary/5 px-4 pt-6 pb-6 rounded-b-3xl">
                 <div className="flex items-center justify-between mb-4">

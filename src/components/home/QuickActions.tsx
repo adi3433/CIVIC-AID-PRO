@@ -1,4 +1,4 @@
-import { Construction, Trash2, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Construction, Trash2, AlertTriangle, ShieldAlert, CreditCard } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 
@@ -13,11 +13,11 @@ const actions = [
   },
   {
     id: 2,
-    title: "Civic Amenity",
-    subtitle: "Parks, Water",
-    icon: Trash2,
-    color: "success",
-    path: "/report",
+    title: "Payments",
+    subtitle: "Bills & Utilities",
+    icon: CreditCard,
+    color: "info",
+    path: "/payments",
   },
   {
     id: 3,
@@ -54,26 +54,24 @@ export function QuickActions() {
           >
             <div className="flex flex-col items-center text-center gap-2">
               <div
-                className={`p-3 rounded-xl transition-transform group-hover:scale-110 ${
-                  action.color === "primary"
+                className={`p-3 rounded-xl transition-transform group-hover:scale-110 ${action.color === "primary"
                     ? "bg-primary/10"
                     : action.color === "success"
-                    ? "bg-success/10"
-                    : action.color === "warning"
-                    ? "bg-warning/10"
-                    : "bg-destructive/10"
-                }`}
+                      ? "bg-success/10"
+                      : action.color === "warning"
+                        ? "bg-warning/10"
+                        : "bg-destructive/10"
+                  }`}
               >
                 <action.icon
-                  className={`w-6 h-6 ${
-                    action.color === "primary"
+                  className={`w-6 h-6 ${action.color === "primary"
                       ? "text-primary"
                       : action.color === "success"
-                      ? "text-success"
-                      : action.color === "warning"
-                      ? "text-warning"
-                      : "text-destructive"
-                  }`}
+                        ? "text-success"
+                        : action.color === "warning"
+                          ? "text-warning"
+                          : "text-destructive"
+                    }`}
                 />
               </div>
               <div>
