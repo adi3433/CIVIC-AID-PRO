@@ -8,6 +8,18 @@ const emergencyContacts = [
   { name: "Ambulance", number: "108", color: "destructive" },
   { name: "Fire", number: "101", color: "warning" },
   { name: "Women Helpline", number: "181", color: "secondary" },
+  { name: "Child Helpline", number: "1098", color: "secondary" },
+  { name: "Senior Citizen Helpline", number: "14567", color: "info" },
+  { name: "National Emergency", number: "112", color: "destructive" },
+  { name: "Railway Helpline", number: "139", color: "info" },
+  { name: "Road Accident", number: "1073", color: "warning" },
+  { name: "Disaster Management", number: "1070", color: "destructive" },
+  { name: "Air Ambulance", number: "9540161344", color: "warning" },
+  { name: "Blood Bank", number: "104", color: "success" },
+  { name: "Poison Control", number: "1066", color: "warning" },
+  { name: "Tourist Helpline", number: "1363", color: "info" },
+  { name: "Cyber Crime", number: "1930", color: "secondary" },
+  { name: "Anti-Corruption", number: "1064", color: "info" },
 ];
 
 export default function EmergencyContacts() {
