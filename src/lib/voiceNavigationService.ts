@@ -262,3 +262,13 @@ export async function processVoiceNavigation(): Promise<VoiceNavigationResult> {
 export function getAllIntents(): Intent[] {
   return intentsMapping.intents;
 }
+
+/**
+ * Match intent from text input (for chatbot integration)
+ * Same as matchIntentWithAI but exported for external use
+ */
+export async function matchIntentWithText(
+  text: string,
+): Promise<{ intent: Intent; confidence: number } | null> {
+  return matchIntentWithAI(text);
+}
