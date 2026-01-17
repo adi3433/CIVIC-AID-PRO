@@ -120,6 +120,21 @@ export async function submitReport(
       console.log("No image provided, creating manual report without photo");
     }
 
+    // Get user's anonymity preference from profile
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("is_anonymous")
+      .eq("id", reportData.userId)
+      .single();
+
+    if (profileError) {
+      console.error("Failed to fetch user profile:", profileError);
+      // Default to non-anonymous if profile fetch fails
+    }
+
+    const isAnonymous = profileData?.is_anonymous || false;
+    console.log("User anonymity preference:", isAnonymous);
+
     // Insert report into database
     const { data, error } = await supabase
       .from("reports")
@@ -135,6 +150,7 @@ export async function submitReport(
         location_name: reportData.locationName || null,
         photo_urls: photoUrls.length > 0 ? photoUrls : null,
         eta_days: null,
+        is_anonymous: isAnonymous,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })

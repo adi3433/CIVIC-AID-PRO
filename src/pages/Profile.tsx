@@ -43,7 +43,7 @@ export default function Profile() {
   const { user, profile, signOut, updateProfile } = useAuth();
   const { toast } = useToast();
   const [elderlyMode, setElderlyMode] = useState(false);
-  const [anonymousReporting, setAnonymousReporting] = useState(false);
+  const [anonymousReporting, setAnonymousReporting] = useState(profile?.is_anonymous || false);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [scrollToDocuments, setScrollToDocuments] = useState(false);
@@ -52,6 +52,13 @@ export default function Profile() {
     phone: profile?.phone || "",
   });
   const { isDark, toggleTheme } = useTheme();
+
+  // Sync anonymousReporting state with profile data
+  useEffect(() => {
+    if (profile?.is_anonymous !== undefined) {
+      setAnonymousReporting(profile.is_anonymous);
+    }
+  }, [profile?.is_anonymous]);
 
   // Handle section parameter from URL
   useEffect(() => {
@@ -112,6 +119,36 @@ export default function Profile() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAnonymousToggle = async (checked: boolean) => {
+    try {
+      const { error } = await updateProfile({
+        is_anonymous: checked,
+      });
+
+      if (error) {
+        toast({
+          title: "Update Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        setAnonymousReporting(checked);
+        toast({
+          title: checked ? "Anonymous Mode Enabled" : "Anonymous Mode Disabled",
+          description: checked 
+            ? "Your future reports will be submitted anonymously" 
+            : "Your future reports will show your identity",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update anonymity preference",
+        variant: "destructive",
+      });
     }
   };
 
@@ -351,12 +388,12 @@ export default function Profile() {
                 Anonymous Reporting
               </p>
               <p className="text-xs text-muted-foreground">
-                Hide your identity
+                {anonymousReporting ? "Enabled - Reports submitted as 'Anonymous'" : "Disabled - Reports show your name"}
               </p>
             </div>
             <Switch
               checked={anonymousReporting}
-              onCheckedChange={setAnonymousReporting}
+              onCheckedChange={handleAnonymousToggle}
             />
           </div>
 

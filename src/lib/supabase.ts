@@ -16,6 +16,7 @@ export interface Profile {
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
+  is_anonymous: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -38,6 +39,7 @@ export interface Report {
   location_name: string | null;
   photo_urls: string[] | null;
   eta_days: number | null;
+  is_anonymous: boolean;
   created_at: string;
   updated_at: string;
 }

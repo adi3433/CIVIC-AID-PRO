@@ -36,6 +36,7 @@ const statusConfig = {
   reported: { label: "Reported", color: "bg-warning/10 text-warning border-warning/30", icon: Clock },
   in_progress: { label: "In Progress", color: "bg-info/10 text-info border-info/30", icon: AlertCircle },
   resolved: { label: "Resolved", color: "bg-success/10 text-success border-success/30", icon: CheckCircle2 },
+  verified: { label: "Verified", color: "bg-primary/10 text-primary border-primary/30", icon: CheckCircle2 },
 };
 
 export default function Report() {
