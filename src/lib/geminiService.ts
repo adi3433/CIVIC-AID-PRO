@@ -80,7 +80,7 @@ async function callFireworksAPI(messages: { role: string; content: string }[]): 
             },
             body: JSON.stringify({
                 model: MODEL_ID,
-                max_tokens: 4096,
+                max_tokens: 1024, // Reduced from 4096 to prevent 408 Timeouts
                 top_p: 1,
                 top_k: 40,
                 presence_penalty: 0,
