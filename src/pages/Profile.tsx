@@ -33,9 +33,16 @@ import { Label } from "@/components/ui/label";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 import SecureDocuments from "@/components/SecureDocuments";
 
-const languages = ["English", "हिंदी", "ಕನ್ನಡ", "தமிழ்"];
+const languageOptions = [
+  { code: "en", name: "English" },
+  { code: "hi", name: "हिंदी" },
+  { code: "kn", name: "ಕನ್ನಡ" },
+  { code: "ta", name: "தமிழ்" },
+  { code: "ml", name: "മലയാളം" },
+];
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -43,7 +50,9 @@ export default function Profile() {
   const { user, profile, signOut, updateProfile } = useAuth();
   const { toast } = useToast();
   const [elderlyMode, setElderlyMode] = useState(false);
-  const [anonymousReporting, setAnonymousReporting] = useState(profile?.is_anonymous || false);
+  const [anonymousReporting, setAnonymousReporting] = useState(
+    profile?.is_anonymous || false,
+  );
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [scrollToDocuments, setScrollToDocuments] = useState(false);
@@ -52,6 +61,7 @@ export default function Profile() {
     phone: profile?.phone || "",
   });
   const { isDark, toggleTheme } = useTheme();
+  const { language, setLanguage, t } = useLanguage();
 
   // Sync anonymousReporting state with profile data
   useEffect(() => {
@@ -138,8 +148,8 @@ export default function Profile() {
         setAnonymousReporting(checked);
         toast({
           title: checked ? "Anonymous Mode Enabled" : "Anonymous Mode Disabled",
-          description: checked 
-            ? "Your future reports will be submitted anonymously" 
+          description: checked
+            ? "Your future reports will be submitted anonymously"
             : "Your future reports will show your identity",
         });
       }
@@ -343,8 +353,24 @@ export default function Profile() {
               <Globe className="w-4 h-4 text-foreground" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">Language</p>
-              <p className="text-xs text-muted-foreground">English</p>
+              <p className="text-sm font-medium text-foreground">
+                {t("profile.language")}
+              </p>
+              <select
+                value={language}
+                onChange={(e) => setLanguage(e.target.value as any)}
+                className="text-xs text-muted-foreground bg-background border-none outline-none cursor-pointer [&>option]:bg-background [&>option]:text-foreground"
+              >
+                {languageOptions.map((lang) => (
+                  <option
+                    key={lang.code}
+                    value={lang.code}
+                    className="bg-background text-foreground"
+                  >
+                    {lang.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </div>
@@ -388,7 +414,9 @@ export default function Profile() {
                 Anonymous Reporting
               </p>
               <p className="text-xs text-muted-foreground">
-                {anonymousReporting ? "Enabled - Reports submitted as 'Anonymous'" : "Disabled - Reports show your name"}
+                {anonymousReporting
+                  ? "Enabled - Reports submitted as 'Anonymous'"
+                  : "Disabled - Reports show your name"}
               </p>
             </div>
             <Switch

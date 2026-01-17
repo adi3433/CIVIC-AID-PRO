@@ -1,10 +1,29 @@
 import { MapPin, Sun, Cloud, Bell } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function GreetingSection() {
+  const { t } = useLanguage();
+  const { profile } = useAuth();
   const [location, setLocation] = useState("Pala, Kottayam");
   const [loading, setLoading] = useState(true);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return t("home.greeting.morning");
+    if (hour < 18) return t("home.greeting.afternoon");
+    return t("home.greeting.evening");
+  };
+
+  const getUserName = () => {
+    if (profile?.full_name) {
+      const firstName = profile.full_name.split(" ")[0];
+      return firstName;
+    }
+    return "User";
+  };
 
   useEffect(() => {
     // Get user's location
@@ -62,11 +81,13 @@ export function GreetingSection() {
     <div className="px-4 pt-6 pb-4">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-muted-foreground text-sm">Good morning,</p>
-          <h1 className="text-2xl font-bold text-foreground">Hi Rahul! 👋</h1>
+          <p className="text-muted-foreground text-sm">{getGreeting()},</p>
+          <h1 className="text-2xl font-bold text-foreground">
+            Hi {getUserName()}!
+          </h1>
           <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
             <MapPin className="w-4 h-4 text-primary" />
-            <span>{loading ? "Locating..." : location}</span>
+            <span>{loading ? t("common.loading") : location}</span>
           </div>
         </div>
         <div className="flex items-center gap-3">

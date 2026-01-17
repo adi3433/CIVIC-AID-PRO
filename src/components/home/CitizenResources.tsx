@@ -1,15 +1,17 @@
 import { Book, Building2, MapIcon, ChevronRight, Shield } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export function CitizenResources() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const resources = [
     {
       id: "library",
-      title: "Information Library",
-      description: "Offline guides & citizen resources",
+      title: t("resources.library"),
+      description: t("resources.library.desc"),
       icon: Book,
       color: "bg-blue-500/10 text-blue-500 border-blue-500/30",
       iconBg: "bg-blue-500/20",
@@ -17,8 +19,8 @@ export function CitizenResources() {
     },
     {
       id: "offices",
-      title: "Local Offices",
-      description: "District offices & contact numbers",
+      title: t("resources.offices"),
+      description: t("resources.offices.desc"),
       icon: Building2,
       color: "bg-purple-500/10 text-purple-500 border-purple-500/30",
       iconBg: "bg-purple-500/20",
@@ -26,8 +28,8 @@ export function CitizenResources() {
     },
     {
       id: "process",
-      title: "Process Navigator",
-      description: "Track applications & next steps",
+      title: t("resources.navigator"),
+      description: t("resources.navigator.desc"),
       icon: MapIcon,
       color: "bg-green-500/10 text-green-500 border-green-500/30",
       iconBg: "bg-green-500/20",
@@ -35,8 +37,8 @@ export function CitizenResources() {
     },
     {
       id: "anti-bribery",
-      title: "Anti-Bribery",
-      description: "Verify official rates for fines & fees",
+      title: t("resources.antiBribery"),
+      description: t("resources.antiBribery.desc"),
       icon: Shield,
       color: "bg-orange-500/10 text-orange-500 border-orange-500/30",
       iconBg: "bg-orange-500/20",
@@ -47,7 +49,7 @@ export function CitizenResources() {
   return (
     <div className="px-4 py-4">
       <h2 className="text-base font-semibold text-foreground mb-3">
-        Citizen Resources
+        {t("home.citizenResources")}
       </h2>
       <div className="space-y-3">
         {resources.map((resource) => (

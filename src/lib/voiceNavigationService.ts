@@ -26,6 +26,65 @@ const checkFireworksAPI = (): boolean => {
 };
 
 /**
+ * Translate non-English text to English for intent matching
+ */
+async function translateToEnglish(
+  text: string,
+  sourceLanguage: string,
+): Promise<string> {
+  if (!checkFireworksAPI()) {
+    console.warn("Fireworks API not configured, skipping translation");
+    return text;
+  }
+
+  try {
+    const apiKey = import.meta.env.VITE_FIREWORKS_API_KEY;
+
+    const prompt = `Translate the following ${sourceLanguage} text to English. Respond ONLY with the English translation, nothing else.
+
+${sourceLanguage} text: "${text}"
+
+English translation:`;
+
+    const response = await fetch(
+      "https://api.fireworks.ai/inference/v1/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "accounts/fireworks/models/gpt-oss-120b",
+          max_tokens: 256,
+          temperature: 0.3,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error(`Translation API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const translation = data.choices[0]?.message?.content?.trim() || text;
+
+    console.log(
+      `🌐 Translated from ${sourceLanguage}:`,
+      text,
+      "→",
+      translation,
+    );
+    return translation;
+  } catch (error) {
+    console.error("Translation error:", error);
+    return text; // Fallback to original text
+  }
+}
+
+/**
  * Use Gemini 2.5 Flash to match user's speech to the best intent
  */
 async function matchIntentWithAI(
@@ -182,13 +241,26 @@ export function captureVoiceInput(): Promise<string> {
     }
 
     const recognition = new SpeechRecognition();
-    recognition.lang = "en-IN"; // Indian English
+
+    // Get current language from localStorage
+    const currentLanguage = localStorage.getItem("app_language") || "en";
+
+    // Map language codes to speech recognition locales
+    const langMap: Record<string, string> = {
+      en: "en-IN",
+      hi: "hi-IN",
+      kn: "kn-IN",
+      ta: "ta-IN",
+      ml: "ml-IN", // Malayalam India
+    };
+
+    recognition.lang = langMap[currentLanguage] || "en-IN";
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      console.log("🎤 Voice Input:", transcript);
+      console.log("🎤 Voice Input:", transcript, `(${recognition.lang})`);
       resolve(transcript);
     };
 
@@ -226,9 +298,27 @@ export async function processVoiceNavigation(): Promise<VoiceNavigationResult> {
       };
     }
 
-    // Step 2: Match intent using AI
+    // Step 2: Translate to English if needed
+    const currentLanguage = localStorage.getItem("app_language") || "en";
+    let englishTranscript = transcript;
+
+    if (currentLanguage !== "en") {
+      console.log("🌐 Translating to English for intent matching...");
+      const langNames: Record<string, string> = {
+        hi: "Hindi",
+        kn: "Kannada",
+        ta: "Tamil",
+        ml: "Malayalam",
+      };
+      englishTranscript = await translateToEnglish(
+        transcript,
+        langNames[currentLanguage] || "the input language",
+      );
+    }
+
+    // Step 3: Match intent using AI (with English transcript)
     console.log("🧠 Matching intent with AI...");
-    const match = await matchIntentWithAI(transcript);
+    const match = await matchIntentWithAI(englishTranscript);
 
     if (!match) {
       return {
@@ -238,14 +328,14 @@ export async function processVoiceNavigation(): Promise<VoiceNavigationResult> {
       };
     }
 
-    // Step 3: Return navigation result
+    // Step 4: Return navigation result
     return {
       success: true,
       route: match.intent.route,
       action: match.intent.action,
       intent: match.intent,
       confidence: match.confidence,
-      transcript,
+      transcript, // Original transcript in user's language
     };
   } catch (error: any) {
     console.error("❌ Voice navigation error:", error);
@@ -265,10 +355,27 @@ export function getAllIntents(): Intent[] {
 
 /**
  * Match intent from text input (for chatbot integration)
- * Same as matchIntentWithAI but exported for external use
+ * Translates to English if needed before matching
  */
 export async function matchIntentWithText(
   text: string,
 ): Promise<{ intent: Intent; confidence: number } | null> {
-  return matchIntentWithAI(text);
+  // Translate to English if needed
+  const currentLanguage = localStorage.getItem("app_language") || "en";
+  let englishText = text;
+
+  if (currentLanguage !== "en") {
+    const langNames: Record<string, string> = {
+      hi: "Hindi",
+      kn: "Kannada",
+      ta: "Tamil",
+      ml: "Malayalam",
+    };
+    englishText = await translateToEnglish(
+      text,
+      langNames[currentLanguage] || "the input language",
+    );
+  }
+
+  return matchIntentWithAI(englishText);
 }

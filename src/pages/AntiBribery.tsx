@@ -23,6 +23,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 // Official rates database (in production, this would come from an API)
 const officialRatesDatabase = [
@@ -198,6 +199,7 @@ const officialRatesDatabase = [
 ];
 
 export default function AntiBribery() {
+  const { t } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState(officialRatesDatabase);
   const [reportSheetOpen, setReportSheetOpen] = useState(false);

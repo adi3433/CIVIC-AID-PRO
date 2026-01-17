@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { MobileLayout } from "./components/layout/MobileLayout";
 import { ScrollToTop } from "./components/ScrollToTop";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -28,63 +29,68 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ScrollToTop />
-            <Routes>
-              {/* Public routes */}
-              <Route path="/login" element={<Login />} />
+    <LanguageProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ScrollToTop />
+              <Routes>
+                {/* Public routes */}
+                <Route path="/login" element={<Login />} />
 
-              {/* Protected routes with layout */}
-              <Route
-                path="/*"
-                element={
-                  <ProtectedRoute>
-                    <MobileLayout>
-                      <Routes>
-                        <Route path="/" element={<Home />} />
-                        <Route path="/report" element={<Report />} />
-                        <Route path="/safety" element={<Safety />} />
-                        <Route
-                          path="/safety/emergency-contacts"
-                          element={<EmergencyContacts />}
-                        />
-                        <Route
-                          path="/safety/check-in"
-                          element={<SafetyCheckin />}
-                        />
-                        <Route
-                          path="/safety/shelter-locator"
-                          element={<SafeShelterLocator />}
-                        />
-                        <Route path="/schemes" element={<Schemes />} />
-                        <Route path="/payments" element={<Payments />} />
-                        <Route path="/profile" element={<Profile />} />
-                        <Route path="/library" element={<Library />} />
-                        <Route
-                          path="/local-offices"
-                          element={<LocalOffices />}
-                        />
-                        <Route
-                          path="/process-navigator"
-                          element={<ProcessNavigator />}
-                        />
-                        <Route path="/anti-bribery" element={<AntiBribery />} />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </MobileLayout>
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </ThemeProvider>
+                {/* Protected routes with layout */}
+                <Route
+                  path="/*"
+                  element={
+                    <ProtectedRoute>
+                      <MobileLayout>
+                        <Routes>
+                          <Route path="/" element={<Home />} />
+                          <Route path="/report" element={<Report />} />
+                          <Route path="/safety" element={<Safety />} />
+                          <Route
+                            path="/safety/emergency-contacts"
+                            element={<EmergencyContacts />}
+                          />
+                          <Route
+                            path="/safety/check-in"
+                            element={<SafetyCheckin />}
+                          />
+                          <Route
+                            path="/safety/shelter-locator"
+                            element={<SafeShelterLocator />}
+                          />
+                          <Route path="/schemes" element={<Schemes />} />
+                          <Route path="/payments" element={<Payments />} />
+                          <Route path="/profile" element={<Profile />} />
+                          <Route path="/library" element={<Library />} />
+                          <Route
+                            path="/local-offices"
+                            element={<LocalOffices />}
+                          />
+                          <Route
+                            path="/process-navigator"
+                            element={<ProcessNavigator />}
+                          />
+                          <Route
+                            path="/anti-bribery"
+                            element={<AntiBribery />}
+                          />
+                          <Route path="*" element={<NotFound />} />
+                        </Routes>
+                      </MobileLayout>
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </LanguageProvider>
   </QueryClientProvider>
 );
 
