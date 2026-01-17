@@ -533,6 +533,37 @@
         "What's happening in my area",
         "Local news and updates"
       ]
+    },
+    {
+      "id": "life_event_schemes",
+      "action": "life_event_search_workflow",
+      "keywords": [
+        "life event",
+        "my situation",
+        "family situation",
+        "passed away",
+        "died",
+        "baby",
+        "pregnant",
+        "lost job",
+        "unemployed",
+        "married",
+        "disabled",
+        "military",
+        "veteran",
+        "farmer",
+        "student",
+        "schemes for my situation"
+      ],
+      "description": "Search for government schemes based on life events and personal situations using natural language",
+      "examples": [
+        "My father who was in the military passed away",
+        "Just had a baby",
+        "Lost my job recently",
+        "Getting married soon",
+        "Schemes for military family",
+        "Help for unemployed"
+      ]
     }
   ]
 }

@@ -407,6 +407,72 @@ export function VoiceNavigationButton() {
         }
         break;
 
+      case "life_event_search_workflow":
+        // Multi-step: Capture life event → Search schemes → Navigate with results
+        toast({
+          title: "💙 Analyzing Your Situation",
+          description: "Finding relevant schemes for your life event...",
+          duration: 3000,
+        });
+
+        setTimeout(async () => {
+          try {
+            const { schemesService } = await import("@/lib/schemesService");
+
+            // Use the original transcript as the life event query
+            const transcript = description || "life event";
+            const results = await schemesService.searchByLifeEvent(transcript);
+
+            if (results.length > 0) {
+              const topSchemes = results
+                .slice(0, 3)
+                .map((r: any) => r.scheme)
+                .join(", ");
+
+              // Read results aloud
+              if ("speechSynthesis" in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(
+                  `I found ${results.length} schemes for your situation. Top recommendations are: ${topSchemes}. Opening schemes page with results.`,
+                );
+                utterance.lang = "en-IN";
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+              }
+
+              toast({
+                title: "✅ Schemes Found!",
+                description: `${results.length} schemes matched your situation. Top: ${results[0]?.scheme}`,
+                duration: 5000,
+              });
+
+              // Navigate to schemes page with life event results
+              setTimeout(() => {
+                navigate("/schemes", {
+                  state: {
+                    lifeEventQuery: transcript,
+                    lifeEventResults: results,
+                  },
+                });
+              }, 2000);
+            } else {
+              toast({
+                title: "⚠️ No Matches",
+                description:
+                  "Couldn't find specific schemes for this situation. Try describing it differently.",
+                variant: "destructive",
+              });
+            }
+          } catch (error) {
+            toast({
+              title: "⚠️ Error",
+              description: "Failed to search for schemes",
+              variant: "destructive",
+            });
+          }
+        }, 1000);
+        break;
+
       default:
         toast({
           title: "⚠️ Unknown Action",

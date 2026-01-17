@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import { useLocation } from "react-router-dom";
+import { schemesService } from "@/lib/schemesService";
 import {
   Search,
   Heart,
@@ -110,6 +112,7 @@ const applicationStatus = {
 };
 
 export default function Schemes() {
+  const location = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [schemes, setSchemes] = useState<Scheme[]>([]);
   const [loading, setLoading] = useState(true);
@@ -117,13 +120,24 @@ export default function Schemes() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [showAllSchemes, setShowAllSchemes] = useState(false);
   const [selectedScheme, setSelectedScheme] = useState<Scheme | null>(null);
-  const [schemeDetails, setSchemeDetails] = useState<SchemeDetails | null>(null);
+  const [schemeDetails, setSchemeDetails] = useState<SchemeDetails | null>(
+    null,
+  );
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [lifeEventQuery, setLifeEventQuery] = useState("");
+  const [lifeEventResults, setLifeEventResults] = useState<any[]>([]);
+  const [loadingLifeEvent, setLoadingLifeEvent] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetchSchemes();
-  }, []);
+
+    // Check if navigated with life event results
+    if (location.state?.lifeEventQuery && location.state?.lifeEventResults) {
+      setLifeEventQuery(location.state.lifeEventQuery);
+      setLifeEventResults(location.state.lifeEventResults);
+    }
+  }, [location]);
 
   const fetchSchemes = async (category?: string) => {
     try {
@@ -131,10 +145,13 @@ export default function Schemes() {
       setError(null);
 
       // Use Fireworks AI via helper service
-      const { generateContent } = await import('@/lib/geminiService');
+      const { generateContent } = await import("@/lib/geminiService");
 
-      const prompt = `List current active Indian government schemes ${category ? `for ${category} category` : "across all categories (Health, Housing, Farmer/Agriculture, Pension)"
-        }. For each scheme provide:
+      const prompt = `List current active Indian government schemes ${
+        category
+          ? `for ${category} category`
+          : "across all categories (Health, Housing, Farmer/Agriculture, Pension)"
+      }. For each scheme provide:
 1. Official scheme name (exact from official portal)
 2. Category (Health/Housing/Farmer/Pension)
 3. Key benefits (brief, under 100 characters)
@@ -154,10 +171,12 @@ RETURN JSON ONLY.`;
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         const schemesData = JSON.parse(jsonMatch[0]);
-        const formattedSchemes = schemesData.map((scheme: any, index: number) => ({
-          id: `scheme-${index}`,
-          ...scheme,
-        }));
+        const formattedSchemes = schemesData.map(
+          (scheme: any, index: number) => ({
+            id: `scheme-${index}`,
+            ...scheme,
+          }),
+        );
         setSchemes(formattedSchemes);
       } else {
         console.error("Failed to parse schemesJSON:", text);
@@ -174,7 +193,7 @@ RETURN JSON ONLY.`;
   const fetchSchemeDetails = async (scheme: Scheme) => {
     try {
       setLoadingDetails(true);
-      const { generateContent } = await import('@/lib/geminiService');
+      const { generateContent } = await import("@/lib/geminiService");
 
       const prompt = `Provide complete, accurate details for the Indian government scheme: "${scheme.name}"
 
@@ -240,9 +259,17 @@ Provide REAL, accurate information from official government sources. RETURN JSON
 
   const handleApplyNow = () => {
     if (schemeDetails?.officialApplicationUrl) {
-      window.open(schemeDetails.officialApplicationUrl, '_blank', 'noopener,noreferrer');
+      window.open(
+        schemeDetails.officialApplicationUrl,
+        "_blank",
+        "noopener,noreferrer",
+      );
     } else if (selectedScheme?.applicationUrl) {
-      window.open(selectedScheme.applicationUrl, '_blank', 'noopener,noreferrer');
+      window.open(
+        selectedScheme.applicationUrl,
+        "_blank",
+        "noopener,noreferrer",
+      );
     }
   };
 
@@ -251,13 +278,62 @@ Provide REAL, accurate information from official government sources. RETURN JSON
     fetchSchemes(categoryId === selectedCategory ? undefined : categoryId);
   };
 
-  const filteredSchemes = schemes.filter((scheme) =>
-    scheme.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    scheme.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    scheme.benefits.toLowerCase().includes(searchQuery.toLowerCase())
+  const handleLifeEventSearch = async () => {
+    if (!lifeEventQuery.trim()) return;
+
+    setLoadingLifeEvent(true);
+    try {
+      const results = await schemesService.searchByLifeEvent(lifeEventQuery);
+      setLifeEventResults(results);
+
+      // Also fetch full scheme details for the recommendations
+      if (results.length > 0) {
+        const schemeNames = results.map((r: any) => r.scheme);
+        // Could fetch details for all recommended schemes here
+      }
+    } catch (error) {
+      console.error("Life event search error:", error);
+      setError("Failed to search for schemes based on your situation");
+    } finally {
+      setLoadingLifeEvent(false);
+    }
+  };
+
+  const handleLifeEventSchemeClick = async (schemeName: string) => {
+    // Try to find the scheme in existing list or fetch new details
+    const existingScheme = schemes.find(
+      (s) => s.name.toLowerCase() === schemeName.toLowerCase(),
+    );
+
+    if (existingScheme) {
+      handleSchemeClick(existingScheme);
+    } else {
+      // Create a temporary scheme object and fetch details
+      const tempScheme: Scheme = {
+        id: `life-event-${Date.now()}`,
+        name: schemeName,
+        category: "Various",
+        benefits: "View details for more information",
+        status: "Active",
+        deadline: "Check details",
+      };
+      setSelectedScheme(tempScheme);
+      fetchSchemeDetails(tempScheme);
+    }
+  };
+
+  const filteredSchemes = schemes.filter(
+    (scheme) =>
+      scheme.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      scheme.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      scheme.benefits.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const popularSchemes = filteredSchemes.slice(0, 5);
+
+  // Show life event results if available, otherwise show popular schemes
+  const displaySchemes = lifeEventResults.length > 0 ? [] : popularSchemes;
+  const showLifeEventResultsAsMain = lifeEventResults.length > 0;
 
   return (
     <div className="bg-background min-h-screen overflow-x-hidden">
@@ -314,31 +390,34 @@ Provide REAL, accurate information from official government sources. RETURN JSON
               variant="interactive"
               size="sm"
               onClick={() => handleCategoryClick(cat.id)}
-              className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 cursor-pointer transition-all ${selectedCategory === cat.id ? 'ring-2 ring-primary' : ''
-                }`}
+              className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 cursor-pointer transition-all ${
+                selectedCategory === cat.id ? "ring-2 ring-primary" : ""
+              }`}
             >
               <div
-                className={`p-2 rounded-lg ${cat.color === "destructive"
-                  ? "bg-destructive/10"
-                  : cat.color === "primary"
-                    ? "bg-primary/10"
-                    : cat.color === "success"
-                      ? "bg-success/10"
-                      : "bg-warning/10"
-                  }`}
+                className={`p-2 rounded-lg ${
+                  cat.color === "destructive"
+                    ? "bg-destructive/10"
+                    : cat.color === "primary"
+                      ? "bg-primary/10"
+                      : cat.color === "success"
+                        ? "bg-success/10"
+                        : "bg-warning/10"
+                }`}
               >
                 <cat.icon
-                  className={`w-4 h-4 ${cat.color === "destructive"
-                    ? "text-destructive"
-                    : cat.color === "primary"
-                      ? "text-primary"
-                      : cat.color === "success"
-                        ? "text-success"
-                        : "text-warning"
-                    }`}
+                  className={`w-4 h-4 ${
+                    cat.color === "destructive"
+                      ? "text-destructive"
+                      : cat.color === "primary"
+                        ? "text-primary"
+                        : cat.color === "success"
+                          ? "text-success"
+                          : "text-warning"
+                  }`}
                 />
               </div>
-              <span className="text-sm font-medium text-foreground whitespace-nowrap">
+              <span className="text-sm font-medium text-foreground">
                 {cat.label}
               </span>
             </Card>
@@ -346,96 +425,151 @@ Provide REAL, accurate information from official government sources. RETURN JSON
         </div>
       </div>
 
-      {/* Loading / Error States */}
-      {loading && (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
-      )}
-
-      {error && (
-        <div className="px-4 py-4">
-          <Card variant="elevated" className="border-destructive/50">
-            <div className="flex items-center gap-3 text-destructive">
-              <AlertCircle className="w-5 h-5" />
-              <p className="text-sm">{error}</p>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => fetchSchemes()}
-              className="mt-3"
-            >
-              Retry
-            </Button>
-          </Card>
-        </div>
-      )}
-
-      {/* Popular Schemes Carousel */}
+      {/* Popular Schemes or Life Event Results */}
       {!loading && !error && !showAllSchemes && (
         <div className="py-4">
-          <div className="flex items-center justify-between px-4 mb-3">
-            <h2 className="text-base font-semibold text-foreground">
-              {selectedCategory ? `${selectedCategory} Schemes` : 'Popular Schemes'}
-            </h2>
-            <button
-              onClick={() => setShowAllSchemes(true)}
-              className="text-sm text-primary font-medium flex items-center gap-1"
-            >
-              View All <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          <div
-            ref={scrollRef}
-            className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 pb-2"
-          >
-            {popularSchemes.map((scheme) => (
-              <Card
-                key={scheme.id}
-                variant="elevated"
-                size="default"
-                className="flex-shrink-0 w-[75%] snap-center cursor-pointer"
-                onClick={() => handleSchemeClick(scheme)}
+          {showLifeEventResultsAsMain ? (
+            /* Life Event Results as Main Content */
+            <>
+              <div className="flex items-center justify-between px-4 mb-3">
+                <h2 className="text-base font-semibold text-foreground">
+                  Recommended for Your Situation ({lifeEventResults.length})
+                </h2>
+                <button
+                  onClick={() => {
+                    setLifeEventResults([]);
+                    setLifeEventQuery("");
+                  }}
+                  className="text-sm text-muted-foreground font-medium flex items-center gap-1"
+                >
+                  <X className="w-4 h-4" />
+                  Clear
+                </button>
+              </div>
+              <div className="px-4 space-y-3">
+                {lifeEventResults.map((result: any, idx: number) => (
+                  <Card
+                    key={idx}
+                    variant="elevated"
+                    size="default"
+                    onClick={() => handleLifeEventSchemeClick(result.scheme)}
+                    className="cursor-pointer"
+                  >
+                    <div className="flex items-start justify-between mb-2">
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${
+                          result.priority === "high"
+                            ? "bg-destructive/10 text-destructive border-destructive/30"
+                            : "bg-warning/10 text-warning border-warning/30"
+                        }`}
+                      >
+                        {result.priority} priority
+                      </Badge>
+                      {result.category && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs bg-primary/10 text-primary border-primary/30"
+                        >
+                          {result.category}
+                        </Badge>
+                      )}
+                    </div>
+                    <h3 className="font-semibold text-foreground text-lg mb-2">
+                      {result.scheme}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      {result.relevance}
+                    </p>
+                    {result.keyBenefits && (
+                      <p className="text-xs text-muted-foreground">
+                        <span className="font-medium">Key Benefits:</span>{" "}
+                        {result.keyBenefits}
+                      </p>
+                    )}
+                    <Button
+                      size="sm"
+                      variant="default"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleLifeEventSchemeClick(result.scheme);
+                      }}
+                      className="mt-3"
+                    >
+                      View Details
+                    </Button>
+                  </Card>
+                ))}
+              </div>
+            </>
+          ) : (
+            /* Normal Popular Schemes Carousel */
+            <>
+              <div className="flex items-center justify-between px-4 mb-3">
+                <h2 className="text-base font-semibold text-foreground">
+                  {selectedCategory
+                    ? `${selectedCategory} Schemes`
+                    : "Popular Schemes"}
+                </h2>
+                <button
+                  onClick={() => setShowAllSchemes(true)}
+                  className="text-sm text-primary font-medium flex items-center gap-1"
+                >
+                  View All <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+              <div
+                ref={scrollRef}
+                className="flex gap-3 overflow-x-auto snap-x snap-mandatory scrollbar-hide -mx-4 px-4 pb-2"
               >
-                <div className="flex items-start justify-between mb-2">
-                  <Badge
-                    variant="outline"
-                    className="text-xs bg-primary/10 text-primary border-primary/30"
+                {popularSchemes.map((scheme) => (
+                  <Card
+                    key={scheme.id}
+                    variant="elevated"
+                    size="default"
+                    className="flex-shrink-0 w-[75%] snap-center cursor-pointer"
+                    onClick={() => handleSchemeClick(scheme)}
                   >
-                    {scheme.category}
-                  </Badge>
-                  <Badge
-                    variant="outline"
-                    className="text-xs bg-success/10 text-success border-success/30"
-                  >
-                    {scheme.status}
-                  </Badge>
-                </div>
-                <h3 className="font-semibold text-foreground text-lg mb-1">
-                  {scheme.name}
-                </h3>
-                <p className="text-sm text-muted-foreground mb-3">
-                  {scheme.benefits}
-                </p>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-muted-foreground">
-                    Deadline: {scheme.deadline}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSchemeClick(scheme);
-                    }}
-                  >
-                    View Details
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
+                    <div className="flex items-start justify-between mb-2">
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-primary/10 text-primary border-primary/30"
+                      >
+                        {scheme.category}
+                      </Badge>
+                      <Badge
+                        variant="outline"
+                        className="text-xs bg-success/10 text-success border-success/30"
+                      >
+                        {scheme.status}
+                      </Badge>
+                    </div>
+                    <h3 className="font-semibold text-foreground text-lg mb-1">
+                      {scheme.name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {scheme.benefits}
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground">
+                        Deadline: {scheme.deadline}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSchemeClick(scheme);
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -486,7 +620,8 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                 </p>
                 {scheme.eligibility && (
                   <p className="text-xs text-muted-foreground mb-2">
-                    <span className="font-medium">Eligibility:</span> {scheme.eligibility}
+                    <span className="font-medium">Eligibility:</span>{" "}
+                    {scheme.eligibility}
                   </p>
                 )}
                 <div className="flex items-center justify-between">
@@ -591,10 +726,16 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                 <>
                   {/* Status and Category */}
                   <div className="flex gap-2 flex-wrap">
-                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                    <Badge
+                      variant="outline"
+                      className="bg-primary/10 text-primary border-primary/30"
+                    >
                       {selectedScheme.category}
                     </Badge>
-                    <Badge variant="outline" className="bg-success/10 text-success border-success/30">
+                    <Badge
+                      variant="outline"
+                      className="bg-success/10 text-success border-success/30"
+                    >
                       {selectedScheme.status}
                     </Badge>
                   </div>
@@ -603,7 +744,9 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Info className="w-5 h-5 text-primary" />
-                      <h3 className="font-semibold text-foreground">Description</h3>
+                      <h3 className="font-semibold text-foreground">
+                        Description
+                      </h3>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       {schemeDetails.fullDescription}
@@ -615,11 +758,16 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <FileCheck className="w-5 h-5 text-primary" />
-                        <h3 className="font-semibold text-foreground">Objectives</h3>
+                        <h3 className="font-semibold text-foreground">
+                          Objectives
+                        </h3>
                       </div>
                       <ul className="space-y-1">
                         {schemeDetails.objectives.map((obj, idx) => (
-                          <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                          <li
+                            key={idx}
+                            className="text-sm text-muted-foreground flex items-start gap-2"
+                          >
                             <span className="text-primary mt-1">•</span>
                             <span>{obj}</span>
                           </li>
@@ -632,21 +780,29 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <DollarSign className="w-5 h-5 text-primary" />
-                      <h3 className="font-semibold text-foreground">Benefits</h3>
+                      <h3 className="font-semibold text-foreground">
+                        Benefits
+                      </h3>
                     </div>
                     {schemeDetails.benefits.monetary && (
                       <p className="text-sm text-muted-foreground mb-2">
-                        <span className="font-medium">Monetary:</span> {schemeDetails.benefits.monetary}
+                        <span className="font-medium">Monetary:</span>{" "}
+                        {schemeDetails.benefits.monetary}
                       </p>
                     )}
                     {schemeDetails.benefits.nonMonetary?.length > 0 && (
                       <ul className="space-y-1">
-                        {schemeDetails.benefits.nonMonetary.map((benefit, idx) => (
-                          <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
-                            <span className="text-primary mt-1">•</span>
-                            <span>{benefit}</span>
-                          </li>
-                        ))}
+                        {schemeDetails.benefits.nonMonetary.map(
+                          (benefit, idx) => (
+                            <li
+                              key={idx}
+                              className="text-sm text-muted-foreground flex items-start gap-2"
+                            >
+                              <span className="text-primary mt-1">•</span>
+                              <span>{benefit}</span>
+                            </li>
+                          ),
+                        )}
                       </ul>
                     )}
                   </div>
@@ -655,26 +811,39 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Users className="w-5 h-5 text-primary" />
-                      <h3 className="font-semibold text-foreground">Eligibility Criteria</h3>
+                      <h3 className="font-semibold text-foreground">
+                        Eligibility Criteria
+                      </h3>
                     </div>
                     <div className="space-y-2 text-sm text-muted-foreground">
                       {schemeDetails.eligibilityCriteria.age && (
-                        <p><span className="font-medium">Age:</span> {schemeDetails.eligibilityCriteria.age}</p>
+                        <p>
+                          <span className="font-medium">Age:</span>{" "}
+                          {schemeDetails.eligibilityCriteria.age}
+                        </p>
                       )}
                       {schemeDetails.eligibilityCriteria.income && (
-                        <p><span className="font-medium">Income:</span> {schemeDetails.eligibilityCriteria.income}</p>
+                        <p>
+                          <span className="font-medium">Income:</span>{" "}
+                          {schemeDetails.eligibilityCriteria.income}
+                        </p>
                       )}
                       {schemeDetails.eligibilityCriteria.location && (
-                        <p><span className="font-medium">Location:</span> {schemeDetails.eligibilityCriteria.location}</p>
+                        <p>
+                          <span className="font-medium">Location:</span>{" "}
+                          {schemeDetails.eligibilityCriteria.location}
+                        </p>
                       )}
                       {schemeDetails.eligibilityCriteria.other?.length > 0 && (
                         <ul className="space-y-1 mt-2">
-                          {schemeDetails.eligibilityCriteria.other.map((criteria, idx) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <span className="text-primary mt-1">•</span>
-                              <span>{criteria}</span>
-                            </li>
-                          ))}
+                          {schemeDetails.eligibilityCriteria.other.map(
+                            (criteria, idx) => (
+                              <li key={idx} className="flex items-start gap-2">
+                                <span className="text-primary mt-1">•</span>
+                                <span>{criteria}</span>
+                              </li>
+                            ),
+                          )}
                         </ul>
                       )}
                     </div>
@@ -685,11 +854,16 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <FileText className="w-5 h-5 text-primary" />
-                        <h3 className="font-semibold text-foreground">Required Documents</h3>
+                        <h3 className="font-semibold text-foreground">
+                          Required Documents
+                        </h3>
                       </div>
                       <ul className="space-y-1">
                         {schemeDetails.requiredDocuments.map((doc, idx) => (
-                          <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                          <li
+                            key={idx}
+                            className="text-sm text-muted-foreground flex items-start gap-2"
+                          >
                             <span className="text-primary mt-1">•</span>
                             <span>{doc}</span>
                           </li>
@@ -703,11 +877,16 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <ChevronRight className="w-5 h-5 text-primary" />
-                        <h3 className="font-semibold text-foreground">How to Apply</h3>
+                        <h3 className="font-semibold text-foreground">
+                          How to Apply
+                        </h3>
                       </div>
                       <ol className="space-y-2">
                         {schemeDetails.applicationProcess.map((step) => (
-                          <li key={step.step} className="text-sm text-muted-foreground flex gap-3">
+                          <li
+                            key={step.step}
+                            className="text-sm text-muted-foreground flex gap-3"
+                          >
                             <span className="font-semibold text-primary min-w-[24px]">
                               {step.step}.
                             </span>
@@ -722,15 +901,26 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Calendar className="w-5 h-5 text-primary" />
-                      <h3 className="font-semibold text-foreground">Important Dates</h3>
+                      <h3 className="font-semibold text-foreground">
+                        Important Dates
+                      </h3>
                     </div>
                     <div className="space-y-1 text-sm text-muted-foreground">
                       {schemeDetails.importantDates.startDate && (
-                        <p><span className="font-medium">Start Date:</span> {schemeDetails.importantDates.startDate}</p>
+                        <p>
+                          <span className="font-medium">Start Date:</span>{" "}
+                          {schemeDetails.importantDates.startDate}
+                        </p>
                       )}
-                      <p><span className="font-medium">Deadline:</span> {schemeDetails.importantDates.deadline}</p>
+                      <p>
+                        <span className="font-medium">Deadline:</span>{" "}
+                        {schemeDetails.importantDates.deadline}
+                      </p>
                       {schemeDetails.importantDates.lastUpdated && (
-                        <p><span className="font-medium">Last Updated:</span> {schemeDetails.importantDates.lastUpdated}</p>
+                        <p>
+                          <span className="font-medium">Last Updated:</span>{" "}
+                          {schemeDetails.importantDates.lastUpdated}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -739,7 +929,9 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Building2 className="w-5 h-5 text-primary" />
-                      <h3 className="font-semibold text-foreground">Contact Information</h3>
+                      <h3 className="font-semibold text-foreground">
+                        Contact Information
+                      </h3>
                     </div>
                     <div className="space-y-2 text-sm text-muted-foreground">
                       {schemeDetails.contactInfo.helpline && (
@@ -787,9 +979,7 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                       </p>
                     )}
                   </div>
-                  <div className="h-6">
-
-                  </div>
+                  <div className="h-6"></div>
                 </>
               ) : (
                 <div className="py-8 text-center text-muted-foreground">
@@ -802,164 +992,4 @@ Provide REAL, accurate information from official government sources. RETURN JSON
       )}
     </div>
   );
-}
-
-const CACHE_DURATION = 3600000; // 1 hour
-
-interface SchemeCache {
-  data: any;
-  timestamp: number;
-}
-
-const cache = new Map<string, SchemeCache>();
-
-export const schemesService = {
-  async fetchSchemes(category?: string, query?: string) {
-    const cacheKey = `schemes-${category || 'all'}-${query || ''}`;
-    const cached = cache.get(cacheKey);
-
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      return cached.data;
-    }
-
-    const { generateContent } = await import('@/lib/geminiService');
-
-    const prompt = `Fetch real, current (2024-2025) Indian government schemes from official sources like myScheme portal, india.gov.in, data.gov.in, and ministry websites.
-    
-${category ? `Filter by category: ${category}` : 'Include all categories: Health, Housing, Agriculture/Farmer, Pension, Education, Employment'}
-${query ? `Search query: ${query}` : ''}
-
-For EACH scheme, provide ACCURATE information:
-1. Official scheme name (exact as on government portal)
-2. Category
-3. Brief description (under 150 chars)
-4. Key benefits with monetary amounts if applicable
-5. Primary eligibility criteria (age, income, location, etc.)
-6. Required documents list
-7. Current status (Active/Closed/Seasonal)
-8. Application deadline or "Ongoing"
-9. Official application URL (actual government portal link)
-10. Implementing ministry/department
-
-Return as JSON array with fields: name, category, description, benefits, eligibility, documents, status, deadline, applicationUrl, ministry.
-Provide 10 REAL active schemes. Prioritize central government schemes and major state schemes.
-RETURN JSON ONLY.`;
-
-    const text = await generateContent(prompt);
-
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) throw new Error("Invalid response format");
-
-    const schemes = JSON.parse(jsonMatch[0]);
-    cache.set(cacheKey, { data: schemes, timestamp: Date.now() });
-
-    return schemes;
-  },
-
-  async checkEligibility(schemeId: string, userProfile: UserProfile) {
-    const { generateContent } = await import('@/lib/geminiService');
-
-    const prompt = `Analyze eligibility for scheme: ${schemeId}
-
-User Profile:
-- Age: ${userProfile.age}
-- Gender: ${userProfile.gender}
-- Annual Income: ₹${userProfile.income}
-- Occupation: ${userProfile.occupation}
-- State/Location: ${userProfile.location}
-- Category: ${userProfile.category}
-- Disability: ${userProfile.disability ? 'Yes' : 'No'}
-- Family Size: ${userProfile.familySize || 'Not specified'}
-
-Analyze against actual scheme rules and return JSON:
-{
-  "eligible": "Yes/Partial/No",
-  "score": 0-100,
-  "reasoning": "detailed explanation",
-  "matchedCriteria": ["criterion1", "criterion2"],
-  "unmatchedCriteria": ["criterion1"],
-  "recommendations": ["suggestion1", "suggestion2"]
-}
-RETURN JSON ONLY.`;
-
-    const text = await generateContent(prompt);
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-
-    if (!jsonMatch) throw new Error("Invalid eligibility response");
-    return JSON.parse(jsonMatch[0]);
-  },
-
-  async fetchSchemeDetails(schemeId: string, schemeName: string) {
-    const { generateContent } = await import('@/lib/geminiService');
-
-    const prompt = `Provide complete details for: ${schemeName}
-
-Fetch from official sources and return comprehensive JSON:
-{
-  "fullDescription": "detailed description",
-  "objectives": ["objective1", "objective2"],
-  "benefits": {
-    "monetary": "amount details",
-    "nonMonetary": ["benefit1", "benefit2"]
-  },
-  "eligibilityCriteria": {
-    "age": "range",
-    "income": "threshold",
-    "location": "applicable states/districts",
-    "other": ["criterion1", "criterion2"]
-  },
-  "requiredDocuments": ["doc1", "doc2"],
-  "applicationProcess": [
-    {"step": 1, "description": "step 1 details"},
-    {"step": 2, "description": "step 2 details"}
-  ],
-  "importantDates": {
-    "startDate": "date",
-    "deadline": "date or Ongoing",
-    "lastUpdated": "date"
-  },
-  "contactInfo": {
-    "helpline": "number",
-    "email": "email",
-    "website": "url"
-  },
-  "officialApplicationUrl": "direct link to application portal"
-}
-RETURN JSON ONLY.`;
-
-    const text = await generateContent(prompt);
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-
-    if (!jsonMatch) throw new Error("Invalid details response");
-    return JSON.parse(jsonMatch[0]);
-  },
-
-  async searchByLifeEvent(query: string, userProfile?: Partial<UserProfile>) {
-    const { generateContent } = await import('@/lib/geminiService');
-
-    const prompt = `User life event query: "${query}"
-${userProfile ? `\nUser context: Age ${userProfile.age}, Location ${userProfile.location}, Income ₹${userProfile.income}` : ''}
-
-Identify relevant Indian government schemes for this life situation.
-Return JSON array of scheme names and brief reasons for recommendation.
-Format: [{"scheme": "name", "relevance": "why it matches", "priority": "high/medium"}]
-RETURN JSON ONLY.`;
-
-    const text = await generateContent(prompt);
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-
-    if (!jsonMatch) return [];
-    return JSON.parse(jsonMatch[0]);
-  }
-};
-
-interface UserProfile {
-  age: number;
-  gender: string;
-  income: number;
-  occupation: string;
-  location: string;
-  category: string;
-  disability: boolean;
-  familySize?: number;
 }
