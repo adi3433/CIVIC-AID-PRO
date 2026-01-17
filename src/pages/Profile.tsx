@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   User,
   Award,
@@ -39,17 +39,40 @@ const languages = ["English", "हिंदी", "ಕನ್ನಡ", "தமி�
 
 export default function Profile() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, profile, signOut, updateProfile } = useAuth();
   const { toast } = useToast();
   const [elderlyMode, setElderlyMode] = useState(false);
   const [anonymousReporting, setAnonymousReporting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [scrollToDocuments, setScrollToDocuments] = useState(false);
   const [editForm, setEditForm] = useState({
     full_name: profile?.full_name || "",
     phone: profile?.phone || "",
   });
   const { isDark, toggleTheme } = useTheme();
+
+  // Handle section parameter from URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const section = params.get("section");
+    if (section === "documents") {
+      setScrollToDocuments(true);
+      // Scroll to documents section after render
+      setTimeout(() => {
+        const documentsSection = document.getElementById(
+          "secure-documents-section",
+        );
+        if (documentsSection) {
+          documentsSection.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+      }, 100);
+    }
+  }, [location.search]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -204,7 +227,7 @@ export default function Profile() {
       </div>
 
       {/* Secure Document Vault */}
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4" id="secure-documents-section">
         <SecureDocuments userId={user?.id || ""} />
       </div>
 

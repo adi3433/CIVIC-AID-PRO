@@ -1,13 +1,46 @@
 import { useState, useRef, useEffect } from "react";
-import { Camera, MapPin, Construction, Trash2, Lightbulb, Droplets, Volume2, CloudRain, ChevronRight, Clock, CheckCircle2, AlertCircle, Sparkles, Loader2, Upload, Send, X, Calendar, ArrowUp, ArrowDown } from "lucide-react";
+import { useLocation } from "react-router-dom";
+import {
+  Camera,
+  MapPin,
+  Construction,
+  Trash2,
+  Lightbulb,
+  Droplets,
+  Volume2,
+  CloudRain,
+  ChevronRight,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  Sparkles,
+  Loader2,
+  Upload,
+  Send,
+  X,
+  Calendar,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { analyzeImageWithAI } from "@/lib/geminiService";
 import { Textarea } from "@/components/ui/textarea";
-import { submitReport, getUserReports, getNearbyReports, upvoteReport, downvoteReport } from "@/lib/reportService";
+import {
+  submitReport,
+  getUserReports,
+  getNearbyReports,
+  upvoteReport,
+  downvoteReport,
+} from "@/lib/reportService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Report as ReportType } from "@/lib/supabase";
@@ -15,23 +48,39 @@ import type { Report as ReportType } from "@/lib/supabase";
 const categories = [
   { id: "pothole", icon: Construction, label: "Potholes", color: "primary" },
   { id: "garbage", icon: Trash2, label: "Garbage", color: "success" },
-  { id: "streetlight", icon: Lightbulb, label: "Streetlights", color: "warning" },
+  {
+    id: "streetlight",
+    icon: Lightbulb,
+    label: "Streetlights",
+    color: "warning",
+  },
   { id: "drainage", icon: CloudRain, label: "Drainage", color: "info" },
   { id: "water", icon: Droplets, label: "Water Leaks", color: "secondary" },
   { id: "noise", icon: Volume2, label: "Noise", color: "destructive" },
 ];
 
-
-
 const statusConfig = {
-  reported: { label: "Reported", color: "bg-warning/10 text-warning border-warning/30", icon: Clock },
-  in_progress: { label: "In Progress", color: "bg-info/10 text-info border-info/30", icon: AlertCircle },
-  resolved: { label: "Resolved", color: "bg-success/10 text-success border-success/30", icon: CheckCircle2 },
+  reported: {
+    label: "Reported",
+    color: "bg-warning/10 text-warning border-warning/30",
+    icon: Clock,
+  },
+  in_progress: {
+    label: "In Progress",
+    color: "bg-info/10 text-info border-info/30",
+    icon: AlertCircle,
+  },
+  resolved: {
+    label: "Resolved",
+    color: "bg-success/10 text-success border-success/30",
+    icon: CheckCircle2,
+  },
 };
 
 export default function Report() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("new");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -40,7 +89,11 @@ export default function Report() {
   const [submitting, setSubmitting] = useState(false);
   const [myReports, setMyReports] = useState<ReportType[]>([]);
   const [loadingReports, setLoadingReports] = useState(false);
-  const [location, setLocation] = useState<{ lat: number; lng: number; name: string } | null>(null);
+  const [location, setLocation] = useState<{
+    lat: number;
+    lng: number;
+    name: string;
+  } | null>(null);
   const [selectedReport, setSelectedReport] = useState<ReportType | null>(null);
   const [isManualMode, setIsManualMode] = useState(false);
   const [nearbyReports, setNearbyReports] = useState<any[]>([]);
@@ -48,6 +101,15 @@ export default function Report() {
   const [votingReport, setVotingReport] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const manualFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle tab parameter from URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (tab === "my" || tab === "new") {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
 
   // Fetch user's reports when switching to "My Reports" tab
   useEffect(() => {
@@ -69,7 +131,7 @@ export default function Report() {
         },
         (error) => {
           console.error("Location error:", error);
-        }
+        },
       );
     }
   }, []);
@@ -83,14 +145,14 @@ export default function Report() {
 
   const fetchNearbyReports = async () => {
     if (!location || !user?.id) return;
-    
+
     setLoadingNearby(true);
     try {
       const result = await getNearbyReports(
         location.lat,
         location.lng,
         5, // 5km radius
-        user.id
+        user.id,
       );
       if (result.success && result.reports) {
         setNearbyReports(result.reports);
@@ -104,7 +166,7 @@ export default function Report() {
 
   const fetchUserReports = async () => {
     if (!user?.id) return;
-    
+
     setLoadingReports(true);
     try {
       const result = await getUserReports(user.id);
@@ -131,7 +193,9 @@ export default function Report() {
     }
   };
 
-  const handleManualFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleManualFileSelect = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -159,7 +223,7 @@ export default function Report() {
       toast({
         title: "Analysis Failed",
         description: "Could not analyze image. Please try again.",
-        variant: "destructive", 
+        variant: "destructive",
       });
     } finally {
       setAnalyzing(false);
@@ -206,7 +270,7 @@ export default function Report() {
 
     setSubmitting(true);
     try {
-      const categoryObj = categories.find(c => c.id === detectedCategory);
+      const categoryObj = categories.find((c) => c.id === detectedCategory);
       const title = `${categoryObj?.label || "Issue"} report`;
 
       const result = await submitReport({
@@ -225,13 +289,13 @@ export default function Report() {
           title: "Report Submitted",
           description: "Your report has been submitted successfully",
         });
-        
+
         // Reset form
         setSelectedImage(null);
         setDetectedCategory(null);
         setDescription("");
         setIsManualMode(false);
-        
+
         // Switch to My Reports tab
         setActiveTab("my");
       } else {
@@ -270,7 +334,10 @@ export default function Report() {
         await fetchNearbyReports();
         toast({
           title: result.action === "added" ? "Upvoted" : "Upvote removed",
-          description: result.action === "added" ? "You upvoted this report" : "Your upvote was removed",
+          description:
+            result.action === "added"
+              ? "You upvoted this report"
+              : "Your upvote was removed",
         });
       } else {
         toast({
@@ -309,7 +376,10 @@ export default function Report() {
         await fetchNearbyReports();
         toast({
           title: result.action === "added" ? "Downvoted" : "Downvote removed",
-          description: result.action === "added" ? "You downvoted this report" : "Your downvote was removed",
+          description:
+            result.action === "added"
+              ? "You downvoted this report"
+              : "Your downvote was removed",
         });
       } else {
         toast({
@@ -333,7 +403,9 @@ export default function Report() {
     <div className="bg-background min-h-screen">
       <div className="px-4 pt-6 pb-4">
         <h1 className="text-2xl font-bold text-foreground">Report Issues</h1>
-        <p className="text-muted-foreground text-sm mt-1">Help improve your community</p>
+        <p className="text-muted-foreground text-sm mt-1">
+          Help improve your community
+        </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4">
@@ -372,20 +444,32 @@ export default function Report() {
                 {analyzing ? (
                   <Loader2 className="w-8 h-8 text-primary-foreground animate-spin" />
                 ) : selectedImage && !isManualMode ? (
-                  <img src={selectedImage} alt="Selected" className="w-8 h-8 rounded object-cover" />
+                  <img
+                    src={selectedImage}
+                    alt="Selected"
+                    className="w-8 h-8 rounded object-cover"
+                  />
                 ) : (
                   <Camera className="w-8 h-8 text-primary-foreground" />
                 )}
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-primary-foreground text-lg">
-                  {analyzing ? "Analyzing Image..." : selectedImage && !isManualMode ? "Photo Selected" : "AI Analysis"}
+                  {analyzing
+                    ? "Analyzing Image..."
+                    : selectedImage && !isManualMode
+                      ? "Photo Selected"
+                      : "AI Analysis"}
                 </h3>
                 <p className="text-primary-foreground/80 text-sm">
-                  {analyzing ? "Identifying issues..." : "Upload photo - AI detects issue automatically"}
+                  {analyzing
+                    ? "Identifying issues..."
+                    : "Upload photo - AI detects issue automatically"}
                 </p>
               </div>
-              {!analyzing && <ChevronRight className="w-6 h-6 text-primary-foreground/80" />}
+              {!analyzing && (
+                <ChevronRight className="w-6 h-6 text-primary-foreground/80" />
+              )}
             </div>
             <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-primary-foreground/10 rounded-full" />
           </Card>
@@ -405,17 +489,25 @@ export default function Report() {
             <div className="flex items-center gap-4">
               <div className="p-3 bg-secondary/10 rounded-xl">
                 {selectedImage && isManualMode ? (
-                  <img src={selectedImage} alt="Selected" className="w-8 h-8 rounded object-cover" />
+                  <img
+                    src={selectedImage}
+                    alt="Selected"
+                    className="w-8 h-8 rounded object-cover"
+                  />
                 ) : (
                   <Upload className="w-8 h-8 text-secondary" />
                 )}
               </div>
               <div className="flex-1">
                 <h3 className="font-semibold text-foreground text-lg">
-                  {selectedImage && isManualMode ? "Photo Selected" : "Manual Report"}
+                  {selectedImage && isManualMode
+                    ? "Photo Selected"
+                    : "Manual Report"}
                 </h3>
                 <p className="text-muted-foreground text-sm">
-                  {selectedImage && isManualMode ? "Add category and description manually" : "Upload photo and write details manually"}
+                  {selectedImage && isManualMode
+                    ? "Add category and description manually"
+                    : "Upload photo and write details manually"}
                 </p>
               </div>
               <ChevronRight className="w-6 h-6 text-muted-foreground" />
@@ -424,7 +516,11 @@ export default function Report() {
 
           {/* Manual Mode Photo Upload Button */}
           {isManualMode && !selectedImage && (
-            <Card variant="default" size="sm" className="flex items-center gap-3">
+            <Card
+              variant="default"
+              size="sm"
+              className="flex items-center gap-3"
+            >
               <Button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -443,10 +539,18 @@ export default function Report() {
           {isManualMode && selectedImage && (
             <Card variant="default" size="sm">
               <div className="flex items-center gap-3">
-                <img src={selectedImage} alt="Uploaded" className="w-16 h-16 rounded-lg object-cover" />
+                <img
+                  src={selectedImage}
+                  alt="Uploaded"
+                  className="w-16 h-16 rounded-lg object-cover"
+                />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">Photo Uploaded</p>
-                  <p className="text-xs text-muted-foreground">Ready for manual input</p>
+                  <p className="text-sm font-medium text-foreground">
+                    Photo Uploaded
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Ready for manual input
+                  </p>
                 </div>
                 <Button
                   size="sm"
@@ -462,7 +566,9 @@ export default function Report() {
           {analyzing && (
             <div className="p-4 bg-primary/5 rounded-lg border border-primary/20 text-center animate-pulse">
               <Sparkles className="w-5 h-5 text-primary mx-auto mb-2" />
-              <p className="text-sm text-primary font-medium">Vision AI is scanning your photo...</p>
+              <p className="text-sm text-primary font-medium">
+                Vision AI is scanning your photo...
+              </p>
             </div>
           )}
 
@@ -470,8 +576,14 @@ export default function Report() {
             <div className="p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5" />
               <div>
-                <p className="text-sm font-semibold text-green-800">Issue Detected: {detectedCategory.charAt(0).toUpperCase() + detectedCategory.slice(1)}</p>
-                <p className="text-xs text-green-700 mt-1">We've auto-selected the category for you.</p>
+                <p className="text-sm font-semibold text-green-800">
+                  Issue Detected:{" "}
+                  {detectedCategory.charAt(0).toUpperCase() +
+                    detectedCategory.slice(1)}
+                </p>
+                <p className="text-xs text-green-700 mt-1">
+                  We've auto-selected the category for you.
+                </p>
               </div>
             </div>
           )}
@@ -479,19 +591,25 @@ export default function Report() {
           {/* Show category selection for both modes */}
           {(detectedCategory || isManualMode) && (
             <div>
-              <h2 className="text-base font-semibold text-foreground mb-3">Select Category</h2>
+              <h2 className="text-base font-semibold text-foreground mb-3">
+                Select Category
+              </h2>
               <div className="grid grid-cols-3 gap-3">
                 {categories.map((cat) => (
                   <Card
                     key={cat.id}
                     variant="interactive"
                     size="sm"
-                    className={`flex flex-col items-center gap-2 py-4 border-2 ${detectedCategory === cat.id ? "border-primary bg-primary/5" : "border-transparent"
-                      }`}
+                    className={`flex flex-col items-center gap-2 py-4 border-2 ${
+                      detectedCategory === cat.id
+                        ? "border-primary bg-primary/5"
+                        : "border-transparent"
+                    }`}
                     onClick={() => setDetectedCategory(cat.id)}
                   >
                     <div
-                      className={`p-2.5 rounded-xl ${cat.color === "primary"
+                      className={`p-2.5 rounded-xl ${
+                        cat.color === "primary"
                           ? "bg-primary/10"
                           : cat.color === "success"
                             ? "bg-success/10"
@@ -502,10 +620,11 @@ export default function Report() {
                                 : cat.color === "secondary"
                                   ? "bg-secondary/10"
                                   : "bg-destructive/10"
-                        }`}
+                      }`}
                     >
                       <cat.icon
-                        className={`w-5 h-5 ${cat.color === "primary"
+                        className={`w-5 h-5 ${
+                          cat.color === "primary"
                             ? "text-primary"
                             : cat.color === "success"
                               ? "text-success"
@@ -516,10 +635,12 @@ export default function Report() {
                                   : cat.color === "secondary"
                                     ? "text-secondary"
                                     : "text-destructive"
-                          }`}
+                        }`}
                       />
                     </div>
-                    <span className="text-xs font-medium text-foreground text-center line-clamp-1">{cat.label}</span>
+                    <span className="text-xs font-medium text-foreground text-center line-clamp-1">
+                      {cat.label}
+                    </span>
                   </Card>
                 ))}
               </div>
@@ -529,7 +650,9 @@ export default function Report() {
           {/* Show description for both modes */}
           {(description || isManualMode) && detectedCategory && (
             <div className="space-y-2">
-              <h2 className="text-base font-semibold text-foreground">Description</h2>
+              <h2 className="text-base font-semibold text-foreground">
+                Description
+              </h2>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -537,10 +660,12 @@ export default function Report() {
                 placeholder="Add additional details..."
               />
               <div className="flex justify-end">
-                <Button 
-                  className="w-full sm:w-auto" 
+                <Button
+                  className="w-full sm:w-auto"
                   onClick={handleSubmitReport}
-                  disabled={submitting || !detectedCategory || !description.trim()}
+                  disabled={
+                    submitting || !detectedCategory || !description.trim()
+                  }
                 >
                   {submitting ? (
                     <>
@@ -563,7 +688,9 @@ export default function Report() {
               <MapPin className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">Auto-detect Location</p>
+              <p className="text-sm font-medium text-foreground">
+                Auto-detect Location
+              </p>
               <p className="text-xs text-muted-foreground">
                 {location ? location.name : "Detecting location..."}
               </p>
@@ -576,7 +703,9 @@ export default function Report() {
           {/* Nearby Reports Section */}
           <div className="mt-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-semibold text-foreground">Nearby Reports</h2>
+              <h2 className="text-base font-semibold text-foreground">
+                Nearby Reports
+              </h2>
               <Badge variant="secondary" className="text-xs">
                 Within 5km
               </Badge>
@@ -585,12 +714,16 @@ export default function Report() {
             {loadingNearby ? (
               <div className="flex flex-col items-center justify-center py-8">
                 <Loader2 className="w-6 h-6 text-primary animate-spin mb-2" />
-                <p className="text-sm text-muted-foreground">Finding nearby reports...</p>
+                <p className="text-sm text-muted-foreground">
+                  Finding nearby reports...
+                </p>
               </div>
             ) : nearbyReports.length === 0 ? (
               <Card variant="default" size="sm" className="text-center py-8">
                 <Construction className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-sm font-medium text-foreground">No nearby reports</p>
+                <p className="text-sm font-medium text-foreground">
+                  No nearby reports
+                </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   No issues reported in your area yet
                 </p>
@@ -598,7 +731,9 @@ export default function Report() {
             ) : (
               <div className="space-y-3">
                 {nearbyReports.map((report) => {
-                  const categoryObj = categories.find(c => c.id === report.category);
+                  const categoryObj = categories.find(
+                    (c) => c.id === report.category,
+                  );
                   const CategoryIcon = categoryObj?.icon || Construction;
                   const timeAgo = (() => {
                     const now = new Date();
@@ -607,16 +742,16 @@ export default function Report() {
                     const diffMins = Math.floor(diffMs / 60000);
                     const diffHours = Math.floor(diffMs / 3600000);
                     const diffDays = Math.floor(diffMs / 86400000);
-                    
+
                     if (diffMins < 60) return `${diffMins}m ago`;
                     if (diffHours < 24) return `${diffHours}h ago`;
                     return `${diffDays}d ago`;
                   })();
 
                   return (
-                    <Card 
-                      key={report.id} 
-                      variant="interactive" 
+                    <Card
+                      key={report.id}
+                      variant="interactive"
                       size="sm"
                       className="cursor-pointer"
                       onClick={() => setSelectedReport(report)}
@@ -625,9 +760,9 @@ export default function Report() {
                         {/* Thumbnail */}
                         <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                           {report.photo_urls && report.photo_urls.length > 0 ? (
-                            <img 
-                              src={report.photo_urls[0]} 
-                              alt="Report" 
+                            <img
+                              src={report.photo_urls[0]}
+                              alt="Report"
                               className="w-full h-full object-cover"
                             />
                           ) : (
@@ -645,7 +780,7 @@ export default function Report() {
                               {report.distance.toFixed(1)}km • {timeAgo}
                             </span>
                           </div>
-                          
+
                           <p className="text-sm text-foreground line-clamp-2 mb-2">
                             {report.description}
                           </p>
@@ -663,9 +798,11 @@ export default function Report() {
                               disabled={votingReport === report.id}
                             >
                               <ArrowUp className="w-3.5 h-3.5" />
-                              <span className="text-xs font-medium">{report.upvotes || 0}</span>
+                              <span className="text-xs font-medium">
+                                {report.upvotes || 0}
+                              </span>
                             </Button>
-                            
+
                             <Button
                               size="sm"
                               variant="outline"
@@ -677,7 +814,9 @@ export default function Report() {
                               disabled={votingReport === report.id}
                             >
                               <ArrowDown className="w-3.5 h-3.5" />
-                              <span className="text-xs font-medium">{report.downvotes || 0}</span>
+                              <span className="text-xs font-medium">
+                                {report.downvotes || 0}
+                              </span>
                             </Button>
                           </div>
                         </div>
@@ -694,12 +833,16 @@ export default function Report() {
           {loadingReports ? (
             <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
-              <p className="text-sm text-muted-foreground">Loading your reports...</p>
+              <p className="text-sm text-muted-foreground">
+                Loading your reports...
+              </p>
             </div>
           ) : myReports.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <Construction className="w-16 h-16 text-muted-foreground/50 mb-4" />
-              <h3 className="font-semibold text-foreground mb-2">No Reports Yet</h3>
+              <h3 className="font-semibold text-foreground mb-2">
+                No Reports Yet
+              </h3>
               <p className="text-sm text-muted-foreground text-center mb-4">
                 Start reporting issues in your community
               </p>
@@ -707,17 +850,23 @@ export default function Report() {
             </div>
           ) : (
             myReports.map((report) => {
-              const status = statusConfig[report.status as keyof typeof statusConfig];
+              const status =
+                statusConfig[report.status as keyof typeof statusConfig];
               const StatusIcon = status.icon;
-              const categoryObj = categories.find(c => c.id === report.category);
-              const date = new Date(report.created_at).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-              });
+              const categoryObj = categories.find(
+                (c) => c.id === report.category,
+              );
+              const date = new Date(report.created_at).toLocaleDateString(
+                "en-US",
+                {
+                  month: "short",
+                  day: "numeric",
+                },
+              );
               return (
-                <Card 
-                  key={report.id} 
-                  variant="interactive" 
+                <Card
+                  key={report.id}
+                  variant="interactive"
                   size="sm"
                   onClick={() => setSelectedReport(report)}
                   className="cursor-pointer"
@@ -725,9 +874,9 @@ export default function Report() {
                   <div className="flex items-start gap-3">
                     <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
                       {report.photo_urls && report.photo_urls.length > 0 ? (
-                        <img 
-                          src={report.photo_urls[0]} 
-                          alt="Report" 
+                        <img
+                          src={report.photo_urls[0]}
+                          alt="Report"
                           className="w-full h-full object-cover"
                         />
                       ) : (
@@ -735,18 +884,24 @@ export default function Report() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-foreground text-sm truncate">{report.title}</h3>
+                      <h3 className="font-medium text-foreground text-sm truncate">
+                        {report.title}
+                      </h3>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {categoryObj?.label || report.category} • {date}
                       </p>
                       <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline" className={`text-xs ${status.color}`}>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${status.color}`}
+                        >
                           <StatusIcon className="w-3 h-3 mr-1" />
                           {status.label}
                         </Badge>
                         {report.eta_days && (
                           <span className="text-xs text-muted-foreground">
-                            ETA: {report.eta_days} {report.eta_days === 1 ? "day" : "days"}
+                            ETA: {report.eta_days}{" "}
+                            {report.eta_days === 1 ? "day" : "days"}
                           </span>
                         )}
                       </div>
@@ -761,125 +916,168 @@ export default function Report() {
       </Tabs>
 
       {/* Report Details Modal */}
-      <Dialog open={!!selectedReport} onOpenChange={(open) => !open && setSelectedReport(null)}>
+      <Dialog
+        open={!!selectedReport}
+        onOpenChange={(open) => !open && setSelectedReport(null)}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          {selectedReport && (() => {
-            const status = statusConfig[selectedReport.status as keyof typeof statusConfig];
-            const StatusIcon = status.icon;
-            const categoryObj = categories.find(c => c.id === selectedReport.category);
-            const CategoryIcon = categoryObj?.icon || Construction;
-            const date = new Date(selectedReport.created_at).toLocaleDateString("en-US", {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            });
-            const time = new Date(selectedReport.created_at).toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-            });
+          {selectedReport &&
+            (() => {
+              const status =
+                statusConfig[
+                  selectedReport.status as keyof typeof statusConfig
+                ];
+              const StatusIcon = status.icon;
+              const categoryObj = categories.find(
+                (c) => c.id === selectedReport.category,
+              );
+              const CategoryIcon = categoryObj?.icon || Construction;
+              const date = new Date(
+                selectedReport.created_at,
+              ).toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              });
+              const time = new Date(
+                selectedReport.created_at,
+              ).toLocaleTimeString("en-US", {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
 
-            return (
-              <>
-                <DialogHeader>
-                  <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                    <div className={`p-2 rounded-lg ${
-                      categoryObj?.color === "primary" ? "bg-primary/10" :
-                      categoryObj?.color === "success" ? "bg-success/10" :
-                      categoryObj?.color === "warning" ? "bg-warning/10" :
-                      categoryObj?.color === "info" ? "bg-info/10" :
-                      categoryObj?.color === "secondary" ? "bg-secondary/10" :
-                      "bg-destructive/10"
-                    }`}>
-                      <CategoryIcon className={`w-5 h-5 ${
-                        categoryObj?.color === "primary" ? "text-primary" :
-                        categoryObj?.color === "success" ? "text-success" :
-                        categoryObj?.color === "warning" ? "text-warning" :
-                        categoryObj?.color === "info" ? "text-info" :
-                        categoryObj?.color === "secondary" ? "text-secondary" :
-                        "text-destructive"
-                      }`} />
-                    </div>
-                    {selectedReport.title}
-                  </DialogTitle>
-                </DialogHeader>
+              return (
+                <>
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                      <div
+                        className={`p-2 rounded-lg ${
+                          categoryObj?.color === "primary"
+                            ? "bg-primary/10"
+                            : categoryObj?.color === "success"
+                              ? "bg-success/10"
+                              : categoryObj?.color === "warning"
+                                ? "bg-warning/10"
+                                : categoryObj?.color === "info"
+                                  ? "bg-info/10"
+                                  : categoryObj?.color === "secondary"
+                                    ? "bg-secondary/10"
+                                    : "bg-destructive/10"
+                        }`}
+                      >
+                        <CategoryIcon
+                          className={`w-5 h-5 ${
+                            categoryObj?.color === "primary"
+                              ? "text-primary"
+                              : categoryObj?.color === "success"
+                                ? "text-success"
+                                : categoryObj?.color === "warning"
+                                  ? "text-warning"
+                                  : categoryObj?.color === "info"
+                                    ? "text-info"
+                                    : categoryObj?.color === "secondary"
+                                      ? "text-secondary"
+                                      : "text-destructive"
+                          }`}
+                        />
+                      </div>
+                      {selectedReport.title}
+                    </DialogTitle>
+                  </DialogHeader>
 
-                <div className="space-y-4 mt-4">
-                  {/* Status Badge */}
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className={`${status.color}`}>
-                      <StatusIcon className="w-3 h-3 mr-1" />
-                      {status.label}
-                    </Badge>
-                    {selectedReport.eta_days && (
-                      <Badge variant="outline">
-                        <Clock className="w-3 h-3 mr-1" />
-                        ETA: {selectedReport.eta_days} {selectedReport.eta_days === 1 ? "day" : "days"}
+                  <div className="space-y-4 mt-4">
+                    {/* Status Badge */}
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className={`${status.color}`}>
+                        <StatusIcon className="w-3 h-3 mr-1" />
+                        {status.label}
                       </Badge>
+                      {selectedReport.eta_days && (
+                        <Badge variant="outline">
+                          <Clock className="w-3 h-3 mr-1" />
+                          ETA: {selectedReport.eta_days}{" "}
+                          {selectedReport.eta_days === 1 ? "day" : "days"}
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Image */}
+                    {selectedReport.photo_urls &&
+                      selectedReport.photo_urls.length > 0 && (
+                        <div className="rounded-lg overflow-hidden border border-border">
+                          <img
+                            src={selectedReport.photo_urls[0]}
+                            alt={selectedReport.title}
+                            className="w-full h-auto max-h-96 object-contain bg-muted"
+                          />
+                        </div>
+                      )}
+
+                    {/* Category */}
+                    <div className="flex items-center gap-2 text-sm">
+                      <span className="font-semibold text-muted-foreground">
+                        Category:
+                      </span>
+                      <Badge variant="secondary">
+                        {categoryObj?.label || selectedReport.category}
+                      </Badge>
+                    </div>
+
+                    {/* Description */}
+                    {selectedReport.description && (
+                      <div>
+                        <h3 className="font-semibold text-foreground mb-2">
+                          Description
+                        </h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed bg-muted/30 p-3 rounded-lg">
+                          {selectedReport.description}
+                        </p>
+                      </div>
                     )}
-                  </div>
 
-                  {/* Image */}
-                  {selectedReport.photo_urls && selectedReport.photo_urls.length > 0 && (
-                    <div className="rounded-lg overflow-hidden border border-border">
-                      <img
-                        src={selectedReport.photo_urls[0]}
-                        alt={selectedReport.title}
-                        className="w-full h-auto max-h-96 object-contain bg-muted"
-                      />
-                    </div>
-                  )}
-
-                  {/* Category */}
-                  <div className="flex items-center gap-2 text-sm">
-                    <span className="font-semibold text-muted-foreground">Category:</span>
-                    <Badge variant="secondary">{categoryObj?.label || selectedReport.category}</Badge>
-                  </div>
-
-                  {/* Description */}
-                  {selectedReport.description && (
-                    <div>
-                      <h3 className="font-semibold text-foreground mb-2">Description</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed bg-muted/30 p-3 rounded-lg">
-                        {selectedReport.description}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Date & Time */}
-                  <div className="flex items-start gap-3 text-sm bg-muted/30 p-3 rounded-lg">
-                    <Calendar className="w-4 h-4 text-primary mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-foreground">{date}</p>
-                      <p className="text-muted-foreground text-xs mt-0.5">{time}</p>
-                    </div>
-                  </div>
-
-                  {/* Location */}
-                  {(selectedReport.location_name || selectedReport.latitude) && (
+                    {/* Date & Time */}
                     <div className="flex items-start gap-3 text-sm bg-muted/30 p-3 rounded-lg">
-                      <MapPin className="w-4 h-4 text-primary mt-0.5" />
-                      <div className="flex-1">
-                        {selectedReport.location_name && (
-                          <p className="font-semibold text-foreground">{selectedReport.location_name}</p>
-                        )}
-                        {selectedReport.latitude && selectedReport.longitude && (
-                          <p className="text-muted-foreground text-xs mt-0.5">
-                            Coordinates: {selectedReport.latitude.toFixed(6)}, {selectedReport.longitude.toFixed(6)}
-                          </p>
-                        )}
+                      <Calendar className="w-4 h-4 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-semibold text-foreground">{date}</p>
+                        <p className="text-muted-foreground text-xs mt-0.5">
+                          {time}
+                        </p>
                       </div>
                     </div>
-                  )}
 
-                  {/* Report ID */}
-                  <div className="text-xs text-muted-foreground pt-2 border-t border-border">
-                    Report ID: {selectedReport.id}
+                    {/* Location */}
+                    {(selectedReport.location_name ||
+                      selectedReport.latitude) && (
+                      <div className="flex items-start gap-3 text-sm bg-muted/30 p-3 rounded-lg">
+                        <MapPin className="w-4 h-4 text-primary mt-0.5" />
+                        <div className="flex-1">
+                          {selectedReport.location_name && (
+                            <p className="font-semibold text-foreground">
+                              {selectedReport.location_name}
+                            </p>
+                          )}
+                          {selectedReport.latitude &&
+                            selectedReport.longitude && (
+                              <p className="text-muted-foreground text-xs mt-0.5">
+                                Coordinates:{" "}
+                                {selectedReport.latitude.toFixed(6)},{" "}
+                                {selectedReport.longitude.toFixed(6)}
+                              </p>
+                            )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Report ID */}
+                    <div className="text-xs text-muted-foreground pt-2 border-t border-border">
+                      Report ID: {selectedReport.id}
+                    </div>
                   </div>
-                </div>
-              </>
-            );
-          })()}
+                </>
+              );
+            })()}
         </DialogContent>
       </Dialog>
     </div>

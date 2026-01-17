@@ -32,6 +32,30 @@
       ]
     },
     {
+      "id": "my_reports",
+      "route": "/report?tab=my",
+      "keywords": [
+        "my reports",
+        "my complaints",
+        "my issues",
+        "reports history",
+        "past reports",
+        "submitted reports",
+        "track reports",
+        "view my reports",
+        "check my reports",
+        "report status"
+      ],
+      "description": "View all your submitted reports and their status. Track your complaints and issues.",
+      "examples": [
+        "Show my reports",
+        "View my complaints",
+        "Check my report status",
+        "My submitted issues",
+        "Track my reports"
+      ]
+    },
+    {
       "id": "safety",
       "route": "/safety",
       "keywords": [
@@ -191,6 +215,30 @@
       "examples": ["My profile", "Edit profile", "Account settings", "Logout"]
     },
     {
+      "id": "my_documents",
+      "route": "/profile?section=documents",
+      "keywords": [
+        "my documents",
+        "my docs",
+        "document vault",
+        "secure documents",
+        "stored documents",
+        "saved documents",
+        "document storage",
+        "uploaded documents",
+        "view documents",
+        "my files"
+      ],
+      "description": "Access your secure document vault. View and manage uploaded documents like Aadhaar, PAN, voter ID, etc.",
+      "examples": [
+        "Show my documents",
+        "View my docs",
+        "Open document vault",
+        "My uploaded files",
+        "Check my documents"
+      ]
+    },
+    {
       "id": "library",
       "route": "/library",
       "keywords": [
@@ -252,6 +300,39 @@
         "Application status",
         "What are next steps",
         "Building permit progress"
+      ]
+    },
+    {
+      "id": "anti_bribery",
+      "route": "/anti-bribery",
+      "keywords": [
+        "anti-bribery",
+        "bribery",
+        "corruption",
+        "official fee",
+        "fine",
+        "challan",
+        "overcharge",
+        "actual rate",
+        "official rate",
+        "verify fee",
+        "check fine",
+        "corruption helpline",
+        "report bribery",
+        "how much is fine",
+        "real fee",
+        "correct amount"
+      ],
+      "description": "Verify official rates for fines, challans, and government fees. Report bribery and corruption. Check if you're being overcharged.",
+      "examples": [
+        "What's the official fine for no helmet",
+        "Check passport fee",
+        "Am I being overcharged",
+        "Report corruption",
+        "Verify fine amount",
+        "Actual rate for driving license",
+        "Anti-corruption helpline",
+        "Official fees"
       ]
     },
     {
