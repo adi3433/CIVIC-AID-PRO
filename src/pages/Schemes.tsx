@@ -283,7 +283,11 @@ Provide REAL, accurate information from official government sources. RETURN JSON
 
     setLoadingLifeEvent(true);
     try {
-      const results = await schemesService.searchByLifeEvent(lifeEventQuery);
+      // Filter from cached schemes instead of making new AI call
+      const results = await schemesService.searchByLifeEvent(
+        lifeEventQuery,
+        schemes,
+      );
       setLifeEventResults(results);
 
       // Also fetch full scheme details for the recommendations
@@ -424,6 +428,16 @@ Provide REAL, accurate information from official government sources. RETURN JSON
           ))}
         </div>
       </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">Loading schemes...</p>
+          </div>
+        </div>
+      )}
 
       {/* Popular Schemes or Life Event Results */}
       {!loading && !error && !showAllSchemes && (
@@ -570,6 +584,22 @@ Provide REAL, accurate information from official government sources. RETURN JSON
               </div>
             </>
           )}
+        </div>
+      )}
+
+      {/* Error State */}
+      {error && !loading && (
+        <div className="px-4 py-12">
+          <Card variant="elevated" className="text-center p-6">
+            <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-3" />
+            <h3 className="font-semibold text-foreground mb-2">
+              Failed to Load Schemes
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">{error}</p>
+            <Button onClick={() => fetchSchemes()} variant="default">
+              Try Again
+            </Button>
+          </Card>
         </div>
       )}
 
