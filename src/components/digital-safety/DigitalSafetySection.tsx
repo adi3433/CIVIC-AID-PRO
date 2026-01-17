@@ -32,7 +32,6 @@ import { WhatToDoNext } from "./WhatToDoNext";
 import { RedFlagsEducation } from "./RedFlagsEducation";
 import { ScamDatabase } from "./ScamDatabase";
 import { ReportScam } from "./ReportScam";
-import { getScamStats } from "@/lib/scamDatabase";
 import { initializeAI, getAIStatus } from "@/lib/aiConfig";
 
 type DigitalSafetyView =
@@ -77,7 +76,6 @@ function BackButton({ onBack, title }: { onBack: () => void; title: string }) {
 export function DigitalSafetySection() {
     const [digitalView, setDigitalView] = useState<DigitalSafetyView>("home");
     const [aiStatus, setAiStatus] = useState(getAIStatus());
-    const stats = getScamStats();
 
     // Initialize AI on component mount
     useEffect(() => {
@@ -107,67 +105,58 @@ export function DigitalSafetySection() {
                 return <><BackButton onBack={() => setDigitalView("home")} title="Report a Scam" /><ReportScam /></>;
             default:
                 return (
-                    <div className="space-y-6">
-                        {/* Hero Banner */}
-                        <Card className="overflow-hidden border-0 shadow-lg">
-                            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 p-4 text-white">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-                                        <Shield className="w-8 h-8" />
-                                    </div>
-                                    <div className="flex-1">
-                                        <h2 className="font-bold text-lg">AI-Powered Scam Protection</h2>
-                                        <p className="text-sm text-white/80">{stats.totalReports.toLocaleString()}+ scams detected</p>
-                                    </div>
-                                    <Badge className={aiStatus.enabled ? "bg-green-500/20 text-white border-green-300/50" : "bg-white/20 text-white border-white/30"}>
-                                        {aiStatus.enabled ? <Sparkles className="w-3 h-3 mr-1" /> : <Cpu className="w-3 h-3 mr-1" />}
-                                        {aiStatus.model}
-                                    </Badge>
+                    <div className="space-y-6 pt-2">
+                        {/* Hero Header */}
+                        <div className="flex items-center justify-between px-1">
+                            <div>
+                                <h1 className="text-2xl font-bold text-foreground">Digital Safety</h1>
+                                <p className="text-muted-foreground text-sm">AI-powered tools to protect you</p>
+                            </div>
+                            <Badge variant="outline" className={aiStatus.enabled ? "bg-green-50 text-green-700 border-green-200" : "bg-blue-50 text-blue-700"}>
+                                {aiStatus.enabled ? <Sparkles className="w-3 h-3 mr-1" /> : <Brain className="w-3 h-3 mr-1" />}
+                                {aiStatus.enabled ? "Active" : "Standard"}
+                            </Badge>
+                        </div>
+
+                        {/* Cybercrime Helpline - Promoted to Top */}
+                        <Card className="p-4 bg-gradient-to-r from-red-600 to-orange-600 text-white shadow-lg border-0">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-sm font-medium text-white/90">Cyber Crime Helpline</p>
+                                    <p className="text-3xl font-bold mt-0.5">1930</p>
+                                    <p className="text-xs text-white/80 mt-1">Available 24/7 • Toll Free</p>
                                 </div>
-                                <div className="grid grid-cols-3 gap-2 mt-4">
-                                    <div className="p-2 bg-white/10 rounded-lg text-center backdrop-blur-sm">
-                                        <p className="text-xl font-bold">{stats.verifiedScams.toLocaleString()}</p>
-                                        <p className="text-xs text-white/70">Verified</p>
-                                    </div>
-                                    <div className="p-2 bg-white/10 rounded-lg text-center backdrop-blur-sm">
-                                        <p className="text-xl font-bold">₹{(stats.totalMoneySaved / 10000000).toFixed(1)}Cr</p>
-                                        <p className="text-xs text-white/70">Saved</p>
-                                    </div>
-                                    <div className="p-2 bg-white/10 rounded-lg text-center backdrop-blur-sm">
-                                        <p className="text-xl font-bold">{stats.activeRegions}</p>
-                                        <p className="text-xs text-white/70">States</p>
-                                    </div>
-                                </div>
+                                <Button className="bg-white text-red-600 hover:bg-white/90 font-semibold h-11 px-6 rounded-full shadow-lg">
+                                    <PhoneCall className="w-4 h-4 mr-2" />
+                                    Call Now
+                                </Button>
                             </div>
                         </Card>
 
-                        {/* AI Scam Detection Tools */}
+                        {/* AI Scam Detection Tools - Expanded Grid */}
                         <div>
-                            <div className="flex items-center justify-between mb-3">
-                                <h3 className="font-semibold text-foreground">Scam Detection</h3>
-                                <Badge variant="outline" className={aiStatus.enabled ? "text-xs bg-green-50 text-green-700 border-green-300" : "text-xs bg-blue-50 text-blue-700"}>
-                                    {aiStatus.enabled ? <Sparkles className="w-3 h-3 mr-1" /> : <Brain className="w-3 h-3 mr-1" />}
-                                    {aiStatus.enabled ? aiStatus.model : "Rule-based"}
-                                </Badge>
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <h3 className="font-semibold text-foreground mb-4 px-1 flex items-center gap-2">
+                                <Shield className="w-4 h-4 text-primary" />
+                                Detection Tools
+                            </h3>
+                            <div className="grid grid-cols-2 gap-4">
                                 {digitalSafetyActions.map((action) => (
                                     <button
                                         key={action.id}
                                         onClick={() => setDigitalView(action.id as DigitalSafetyView)}
-                                        className="p-3 rounded-xl border bg-card hover:shadow-md hover:border-primary/50 transition-all text-left group"
+                                        className="p-4 rounded-2xl border bg-card hover:shadow-lg hover:border-primary/50 transition-all text-left group flex flex-col items-start gap-4 h-full"
                                     >
-                                        <div className="flex items-start gap-3">
-                                            <div className={`p-2 rounded-lg ${action.color} text-white`}>
-                                                <action.icon className="w-5 h-5" />
+                                        <div className={`p-3 rounded-xl ${action.color} text-white shadow-sm group-hover:scale-110 transition-transform`}>
+                                            <action.icon className="w-6 h-6" />
+                                        </div>
+                                        <div className="min-w-0 w-full">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <p className="font-semibold text-foreground text-base">{action.title}</p>
+                                                {action.badge && (
+                                                    <Badge variant="secondary" className="text-[10px] px-1.5 h-5">{action.badge}</Badge>
+                                                )}
                                             </div>
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2">
-                                                    <p className="font-medium text-foreground text-sm">{action.title}</p>
-                                                    <Badge variant="secondary" className="text-xs px-1.5 py-0">{action.badge}</Badge>
-                                                </div>
-                                                <p className="text-xs text-muted-foreground mt-0.5">{action.description}</p>
-                                            </div>
+                                            <p className="text-sm text-muted-foreground leading-snug">{action.description}</p>
                                         </div>
                                     </button>
                                 ))}
@@ -176,51 +165,45 @@ export function DigitalSafetySection() {
 
                         {/* Education & Community */}
                         <div>
-                            <h3 className="font-semibold text-foreground mb-3">Learn & Contribute</h3>
-                            <div className="space-y-2">
+                            <h3 className="font-semibold text-foreground mb-4 px-1 flex items-center gap-2">
+                                <BookOpen className="w-4 h-4 text-primary" />
+                                Knowledge Base
+                            </h3>
+                            <div className="grid grid-cols-1 gap-3">
                                 {educationActions.map((action) => (
                                     <button
                                         key={action.id}
                                         onClick={() => setDigitalView(action.id as DigitalSafetyView)}
-                                        className="w-full p-3 rounded-xl border bg-card hover:shadow-md hover:border-primary/50 transition-all text-left"
+                                        className="w-full p-4 rounded-2xl border bg-card hover:shadow-md hover:border-primary/50 transition-all text-left flex items-center gap-4"
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg ${action.color} text-white`}>
-                                                <action.icon className="w-5 h-5" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <p className="font-medium text-foreground text-sm">{action.title}</p>
-                                                <p className="text-xs text-muted-foreground">{action.description}</p>
-                                            </div>
-                                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                                        <div className={`p-2.5 rounded-xl ${action.color} text-white`}>
+                                            <action.icon className="w-5 h-5" />
                                         </div>
+                                        <div className="flex-1">
+                                            <p className="font-semibold text-foreground">{action.title}</p>
+                                            <p className="text-sm text-muted-foreground">{action.description}</p>
+                                        </div>
+                                        <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
                                     </button>
                                 ))}
                             </div>
                         </div>
 
                         {/* Trending Alert */}
-                        <Card className="p-3 bg-amber-50 border-amber-200">
-                            <div className="flex items-start gap-3">
-                                <div className="p-2 bg-amber-100 rounded-lg">
+                        <Card className="p-4 bg-amber-50/50 border-amber-200">
+                            <div className="flex items-start gap-4">
+                                <div className="p-2.5 bg-amber-100 rounded-xl">
                                     <TrendingUp className="w-5 h-5 text-amber-600" />
                                 </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-medium text-amber-800">Trending Alert</p>
-                                    <p className="text-xs text-amber-700 mt-0.5">UPI refund scams are up 45% this week.</p>
+                                <div className="flex-1 pt-1">
+                                    <p className="text-sm font-semibold text-amber-900">Scam Alert of the Week</p>
+                                    <p className="text-sm text-amber-700/80 mt-1 leading-relaxed">
+                                        UPI refund scams are rising. Scammers ask to scan QR codes to "receive" money. Never scan to receive.
+                                    </p>
                                 </div>
-                                <Button variant="ghost" size="sm" className="text-amber-700" onClick={() => setDigitalView("database")}>View</Button>
-                            </div>
-                        </Card>
-
-                        {/* Cybercrime Helpline */}
-                        <Card className="p-4 bg-gradient-to-r from-red-500 to-orange-500 text-white">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-white/80">Cyber Crime Helpline</p>
-                                    <p className="text-2xl font-bold">1930</p>
-                                </div>
-                                <Button variant="secondary" size="sm"><PhoneCall className="w-4 h-4 mr-1" />Call Now</Button>
+                                <Button variant="ghost" size="sm" className="text-amber-700 hover:text-amber-800 hover:bg-amber-100/50 px-2" onClick={() => setDigitalView("database")}>
+                                    View
+                                </Button>
                             </div>
                         </Card>
                     </div>
