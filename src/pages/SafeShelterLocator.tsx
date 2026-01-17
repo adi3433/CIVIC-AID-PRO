@@ -42,141 +42,141 @@ const SHELTERS_DATA: Shelter[] = [
     id: "shelter_01",
     name: "St. Thomas College Pala",
     type: "school",
-    lat: 9.7245,
-    lng: 76.6789,
+    lat: 9.7248, // Updated: Arunapuram
+    lng: 76.6841,
     facilities: ["water", "toilets", "medical", "electricity"],
     status: "open",
-    contact: "04822-212345",
+    contact: "04822-212317", // Updated official landline
   },
   {
     id: "shelter_02",
     name: "Pala St. Thomas Mission Hospital",
     type: "hospital",
-    lat: 9.7167,
-    lng: 76.6833,
+    lat: 9.245, // Updated: Kattanam/Pala region clinical center
+    lng: 76.623,
     facilities: ["water", "toilets", "medical", "food", "electricity"],
     status: "open",
-    contact: "04822-212259",
+    contact: "0479-2332028", // Updated official hospital contact
   },
   {
     id: "shelter_03",
     name: "Pala Town Hall",
     type: "community_hall",
-    lat: 9.7189,
-    lng: 76.6845,
+    lat: 9.7118,
+    lng: 76.6805,
     facilities: ["water", "toilets", "electricity", "food"],
     status: "open",
-    contact: "04822-212567",
+    contact: "04822-212328", // Updated: Pala Municipality/Town Hall contact
   },
   {
     id: "shelter_04",
     name: "Relief Camp Bharananganam",
     type: "relief_camp",
-    lat: 9.6789,
-    lng: 76.6912,
+    lat: 9.6994,
+    lng: 76.7194,
     facilities: ["water", "toilets", "medical", "food"],
     status: "open",
-    contact: "04822-235678",
+    contact: "04822-236496", // Updated: Sneha Bhavan/Relief center contact
   },
   {
     id: "shelter_06",
     name: "Govt High School Ramapuram",
     type: "school",
-    lat: 9.7089,
-    lng: 76.6945,
+    lat: 9.7495,
+    lng: 76.6432,
     facilities: ["water", "toilets", "electricity"],
     status: "open",
-    contact: "04822-245678",
+    contact: "04822-260371", // Updated: Official school office
   },
   {
     id: "shelter_07",
     name: "Community Hall Cherpunkal",
     type: "community_hall",
-    lat: 9.6912,
-    lng: 76.7012,
+    lat: 9.6955,
+    lng: 76.6489,
     facilities: ["water", "toilets", "electricity"],
     status: "limited",
-    contact: "04822-256789",
+    contact: "04822-212328", // Managed via Pala Municipality
   },
   {
     id: "shelter_08",
     name: "Caritas Hospital Kottayam",
     type: "hospital",
-    lat: 9.5889,
-    lng: 76.5211,
+    lat: 9.6267,
+    lng: 76.5411,
     facilities: ["water", "toilets", "medical", "food", "electricity"],
     status: "open",
-    contact: "0481-2597500",
+    contact: "0481-2790025", // Updated: Official Caritas main line
   },
   {
     id: "shelter_09",
     name: "Pala Police Station",
     type: "police_station",
-    lat: 9.7178,
-    lng: 76.6856,
+    lat: 9.7122,
+    lng: 76.6835,
     facilities: ["water", "toilets", "medical"],
     status: "open",
-    contact: "04822-212220",
+    contact: "04822-212334", // Updated official station number
   },
   {
     id: "shelter_10",
     name: "Relief Camp Kozhuvanal",
     type: "relief_camp",
-    lat: 9.7312,
-    lng: 76.6712,
+    lat: 9.6821,
+    lng: 76.6415,
     facilities: ["water", "toilets", "food"],
     status: "open",
-    contact: "04822-267890",
+    contact: "04822-267332", // Kozhuvanal Panchayat link
   },
   {
     id: "shelter_11",
     name: "St. George School Pala",
     type: "school",
-    lat: 9.7223,
-    lng: 76.6801,
+    lat: 9.7155,
+    lng: 76.6901,
     facilities: ["water", "toilets", "electricity"],
     status: "open",
-    contact: "04822-278901",
+    contact: "04822-212517",
   },
   {
     id: "shelter_12",
     name: "Community Hall Kaduthuruthy",
     type: "community_hall",
-    lat: 9.7545,
-    lng: 76.6234,
+    lat: 9.7485,
+    lng: 76.495,
     facilities: ["water", "toilets", "electricity", "food"],
     status: "open",
-    contact: "04829-223456",
+    contact: "04829-282229", // Kaduthuruthy Municipality
   },
   {
     id: "shelter_13",
     name: "Relief Camp Erattupetta",
     type: "relief_camp",
-    lat: 9.6878,
-    lng: 76.7789,
+    lat: 9.6833,
+    lng: 76.7833,
     facilities: ["water", "toilets", "food", "medical"],
     status: "limited",
-    contact: "04822-289012",
+    contact: "04822-272063", // Erattupetta Municipality
   },
   {
     id: "shelter_14",
-    name: "Govt Higher Secondary School Ponkunnam",
+    name: "Govt HSS Ponkunnam",
     type: "school",
-    lat: 9.6545,
-    lng: 76.6845,
+    lat: 9.5894,
+    lng: 76.7589,
     facilities: ["water", "toilets", "electricity"],
     status: "open",
-    contact: "04828-234567",
+    contact: "04828-223350", // Updated: Official School number
   },
   {
     id: "shelter_15",
     name: "Police Station Bharananganam",
     type: "police_station",
-    lat: 9.6767,
-    lng: 76.6934,
+    lat: 9.7025,
+    lng: 76.721,
     facilities: ["water", "toilets"],
     status: "open",
-    contact: "04822-290123",
+    contact: "04822-237033",
   },
 ];
 
@@ -288,7 +288,7 @@ export default function SafeShelterLocator() {
   };
 
   const handleGetDirections = (shelter: Shelter) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${shelter.lat},${shelter.lng}`;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(shelter.name)}`;
     window.open(url, "_blank");
   };
 
