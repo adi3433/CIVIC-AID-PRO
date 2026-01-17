@@ -177,6 +177,62 @@ export async function getUserReports(userId: string) {
 }
 
 /**
+ * Verify that a resolved report has been fixed (only by original reporter)
+ */
+export async function verifyReport(reportId: string, userId: string) {
+  try {
+    console.log("Starting verification for report:", reportId, "by user:", userId);
+    
+    // First, check if the user is the original reporter
+    const { data: report, error: fetchError } = await supabase
+      .from("reports")
+      .select("user_id, status")
+      .eq("id", reportId)
+      .single();
+
+    if (fetchError) {
+      console.error("Fetch report error:", fetchError);
+      return { success: false, error: "Failed to fetch report" };
+    }
+
+    console.log("Report fetched:", report);
+
+    if (report.user_id !== userId) {
+      console.error("User not authorized:", report.user_id, "!=", userId);
+      return { success: false, error: "Only the original reporter can verify this report" };
+    }
+
+    if (report.status !== "resolved") {
+      console.error("Report not resolved:", report.status);
+      return { success: false, error: "Only resolved reports can be verified" };
+    }
+
+    console.log("Updating report status to verified...");
+
+    // Update status to verified
+    const { data: updateData, error: updateError } = await supabase
+      .from("reports")
+      .update({ 
+        status: "verified",
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", reportId)
+      .select();
+
+    if (updateError) {
+      console.error("Update report status error:", updateError);
+      return { success: false, error: `Failed to verify report: ${updateError.message}` };
+    }
+
+    console.log("Report verified successfully:", updateData);
+    return { success: true };
+  } catch (error) {
+    console.error("Verify report error:", error);
+    return { success: false, error: "An unexpected error occurred" };
+  }
+}
+
+/**
  * Calculate distance between two coordinates using Haversine formula
  */
 function calculateDistance(
@@ -208,7 +264,7 @@ export async function getNearbyReports(
   currentUserId?: string
 ) {
   try {
-    // Fetch all reports (we'll filter by distance client-side for simplicity)
+    // Fetch only unresolved reports (exclude "resolved" status)
     // For production, consider using PostGIS for server-side distance calculation
     const { data, error } = await supabase
       .from("reports")
@@ -217,6 +273,7 @@ export async function getNearbyReports(
         upvotes:report_interactions!report_interactions_report_id_fkey(count),
         downvotes:report_interactions!report_interactions_report_id_fkey(count)
       `)
+      .neq("status", "resolved")
       .not("latitude", "is", null)
       .not("longitude", "is", null)
       .order("created_at", { ascending: false });
@@ -423,3 +480,57 @@ export async function downvoteReport(reportId: string, userId: string) {
     return { success: false, error: "An unexpected error occurred" };
   }
 }
+
+/**
+ * Check for duplicate reports within a small radius (10 meters)
+ * Used for duplicate detection before submission
+ */
+export async function checkDuplicateReports(
+  latitude: number,
+  longitude: number,
+  category: string,
+  radiusMeters: number = 10,
+  daysBack: number = 7
+) {
+  try {
+    // Calculate time threshold
+    const timeThreshold = new Date();
+    timeThreshold.setDate(timeThreshold.getDate() - daysBack);
+
+    // Fetch reports in the same category that are not resolved
+    const { data, error } = await supabase
+      .from("reports")
+      .select("*")
+      .eq("category", category)
+      .neq("status", "resolved")
+      .gte("created_at", timeThreshold.toISOString())
+      .not("latitude", "is", null)
+      .not("longitude", "is", null);
+
+    if (error) {
+      console.error("Check duplicates error:", error);
+      return { success: false, error: "Failed to check for duplicates" };
+    }
+
+    // Filter by precise distance (10 meters)
+    const radiusKm = radiusMeters / 1000; // Convert to kilometers
+    const duplicates = data
+      .map((report) => {
+        const distance = calculateDistance(
+          latitude,
+          longitude,
+          report.latitude!,
+          report.longitude!
+        );
+        return { ...report, distance: distance * 1000 }; // Convert to meters
+      })
+      .filter((report) => report.distance <= radiusMeters)
+      .sort((a, b) => a.distance - b.distance); // Closest first
+
+    return { success: true, duplicates };
+  } catch (error) {
+    console.error("Check duplicates error:", error);
+    return { success: false, error: "An unexpected error occurred" };
+  }
+}
+

@@ -32,7 +32,7 @@ export interface Report {
     | "drainage"
     | "water"
     | "noise";
-  status: "reported" | "in_progress" | "resolved";
+  status: "reported" | "in_progress" | "resolved" | "verified";
   latitude: number | null;
   longitude: number | null;
   location_name: string | null;

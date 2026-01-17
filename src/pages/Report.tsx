@@ -1,27 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import {
-  Camera,
-  MapPin,
-  Construction,
-  Trash2,
-  Lightbulb,
-  Droplets,
-  Volume2,
-  CloudRain,
-  ChevronRight,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  Sparkles,
-  Loader2,
-  Upload,
-  Send,
-  X,
-  Calendar,
-  ArrowUp,
-  ArrowDown,
-} from "lucide-react";
+import { Camera, MapPin, Construction, Trash2, Lightbulb, Droplets, Volume2, CloudRain, ChevronRight, Clock, CheckCircle2, AlertCircle, Sparkles, Loader2, Upload, Send, X, Calendar, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,16 +12,11 @@ import {
 } from "@/components/ui/dialog";
 import { analyzeImageWithAI } from "@/lib/geminiService";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  submitReport,
-  getUserReports,
-  getNearbyReports,
-  upvoteReport,
-  downvoteReport,
-} from "@/lib/reportService";
+import { submitReport, getUserReports, getNearbyReports, upvoteReport, downvoteReport, checkDuplicateReports, verifyReport } from "@/lib/reportService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import type { Report as ReportType } from "@/lib/supabase";
+import { useLocation as useRouterLocation } from "react-router-dom";
 
 const categories = [
   { id: "pothole", icon: Construction, label: "Potholes", color: "primary" },
@@ -60,27 +33,15 @@ const categories = [
 ];
 
 const statusConfig = {
-  reported: {
-    label: "Reported",
-    color: "bg-warning/10 text-warning border-warning/30",
-    icon: Clock,
-  },
-  in_progress: {
-    label: "In Progress",
-    color: "bg-info/10 text-info border-info/30",
-    icon: AlertCircle,
-  },
-  resolved: {
-    label: "Resolved",
-    color: "bg-success/10 text-success border-success/30",
-    icon: CheckCircle2,
-  },
+  reported: { label: "Reported", color: "bg-warning/10 text-warning border-warning/30", icon: Clock },
+  in_progress: { label: "In Progress", color: "bg-info/10 text-info border-info/30", icon: AlertCircle },
+  resolved: { label: "Resolved", color: "bg-success/10 text-success border-success/30", icon: CheckCircle2 },
 };
 
 export default function Report() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const location = useLocation();
+  const routerLocation = useRouterLocation();
   const [activeTab, setActiveTab] = useState("new");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
@@ -99,17 +60,21 @@ export default function Report() {
   const [nearbyReports, setNearbyReports] = useState<any[]>([]);
   const [loadingNearby, setLoadingNearby] = useState(false);
   const [votingReport, setVotingReport] = useState<string | null>(null);
+  const [duplicateReports, setDuplicateReports] = useState<any[]>([]);
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const manualFileInputRef = useRef<HTMLInputElement>(null);
 
   // Handle tab parameter from URL
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
+    const params = new URLSearchParams(routerLocation.search);
     const tab = params.get("tab");
     if (tab === "my" || tab === "new") {
       setActiveTab(tab);
     }
-  }, [location.search]);
+  }, [routerLocation.search]);
 
   // Fetch user's reports when switching to "My Reports" tab
   useEffect(() => {
@@ -230,7 +195,7 @@ export default function Report() {
     }
   };
 
-  const handleSubmitReport = async () => {
+  const handleSubmitReport = async (bypassDuplicateCheck: boolean = false) => {
     if (!user?.id) {
       toast({
         title: "Authentication Required",
@@ -266,6 +231,32 @@ export default function Report() {
         variant: "destructive",
       });
       return;
+    }
+
+    // Check for duplicates if location is available and not bypassing
+    if (!bypassDuplicateCheck && location?.lat && location?.lng && detectedCategory) {
+      setCheckingDuplicates(true);
+      try {
+        const duplicateResult = await checkDuplicateReports(
+          location.lat,
+          location.lng,
+          detectedCategory,
+          10, // 10 meters radius
+          7 // Last 7 days
+        );
+
+        if (duplicateResult.success && duplicateResult.duplicates && duplicateResult.duplicates.length > 0) {
+          setDuplicateReports(duplicateResult.duplicates);
+          setShowDuplicateModal(true);
+          setCheckingDuplicates(false);
+          return; // Stop submission and show modal
+        }
+      } catch (error) {
+        console.error("Duplicate check error:", error);
+        // Continue with submission if duplicate check fails
+      } finally {
+        setCheckingDuplicates(false);
+      }
     }
 
     setSubmitting(true);
@@ -397,6 +388,56 @@ export default function Report() {
       });
     } finally {
       setVotingReport(null);
+    }
+  };
+
+  const handleVerifyReport = async () => {
+    if (!user?.id || !selectedReport) {
+      toast({
+        title: "Authentication Required",
+        description: "Please login to verify reports",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (selectedReport.user_id !== user.id) {
+      toast({
+        title: "Unauthorized",
+        description: "Only the original reporter can verify this report",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setVerifying(true);
+    try {
+      const result = await verifyReport(selectedReport.id, user.id);
+      if (result.success) {
+        toast({
+          title: "Report Verified",
+          description: "Thank you for confirming the resolution!",
+        });
+        
+        // Refresh user's reports and close modal
+        await fetchUserReports();
+        setSelectedReport(null);
+      } else {
+        toast({
+          title: "Verification Failed",
+          description: result.error || "Failed to verify report",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Verify error:", error);
+      toast({
+        title: "Verification Failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setVerifying(false);
     }
   };
   return (
@@ -660,14 +701,17 @@ export default function Report() {
                 placeholder="Add additional details..."
               />
               <div className="flex justify-end">
-                <Button
-                  className="w-full sm:w-auto"
-                  onClick={handleSubmitReport}
-                  disabled={
-                    submitting || !detectedCategory || !description.trim()
-                  }
+                <Button 
+                  className="w-full sm:w-auto" 
+                  onClick={() => handleSubmitReport()}
+                  disabled={submitting || !detectedCategory || !description.trim()}
                 >
-                  {submitting ? (
+                  {checkingDuplicates ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Checking duplicates...
+                    </>
+                  ) : submitting ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Submitting...
@@ -986,21 +1030,20 @@ export default function Report() {
                     </DialogTitle>
                   </DialogHeader>
 
-                  <div className="space-y-4 mt-4">
-                    {/* Status Badge */}
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className={`${status.color}`}>
-                        <StatusIcon className="w-3 h-3 mr-1" />
-                        {status.label}
+                <div className="space-y-4 mt-4">
+                  {/* Status Badge */}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className={`${status.color}`}>
+                      <StatusIcon className="w-3 h-3 mr-1" />
+                      {status.label}
+                    </Badge>
+                    {selectedReport.eta_days && (
+                      <Badge variant="outline">
+                        <Clock className="w-3 h-3 mr-1" />
+                        ETA: {selectedReport.eta_days} {selectedReport.eta_days === 1 ? "day" : "days"}
                       </Badge>
-                      {selectedReport.eta_days && (
-                        <Badge variant="outline">
-                          <Clock className="w-3 h-3 mr-1" />
-                          ETA: {selectedReport.eta_days}{" "}
-                          {selectedReport.eta_days === 1 ? "day" : "days"}
-                        </Badge>
-                      )}
-                    </div>
+                    )}
+                  </div>
 
                     {/* Image */}
                     {selectedReport.photo_urls &&
@@ -1078,6 +1121,145 @@ export default function Report() {
                 </>
               );
             })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Duplicate Detection Modal */}
+      <Dialog open={showDuplicateModal} onOpenChange={setShowDuplicateModal}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-warning">
+              <AlertTriangle className="w-6 h-6" />
+              Possible Duplicate Report Detected
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4">
+            <div className="bg-warning/10 border border-warning/30 rounded-lg p-4">
+              <p className="text-sm text-foreground leading-relaxed">
+                <strong>We found {duplicateReports.length} similar {duplicateReports.length === 1 ? 'report' : 'reports'} at this location.</strong>
+                <br />
+                This issue may have already been reported. You can view existing reports below, upvote them for priority, or submit a new report if you believe this is a different issue.
+              </p>
+            </div>
+
+            {/* Show duplicate reports */}
+            <div className="space-y-3">
+              <h3 className="font-semibold text-foreground">Existing Reports:</h3>
+              {duplicateReports.map((duplicate) => {
+                const categoryObj = categories.find(c => c.id === duplicate.category);
+                const CategoryIcon = categoryObj?.icon || Construction;
+                const status = statusConfig[duplicate.status as keyof typeof statusConfig];
+                const StatusIcon = status?.icon || Clock;
+                const date = new Date(duplicate.created_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                });
+
+                return (
+                  <Card key={duplicate.id} variant="default" size="sm" className="border-2">
+                    <div className="flex gap-3">
+                      {/* Thumbnail */}
+                      <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {duplicate.photo_urls && duplicate.photo_urls.length > 0 ? (
+                          <img 
+                            src={duplicate.photo_urls[0]} 
+                            alt="Report" 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <CategoryIcon className="w-6 h-6 text-muted-foreground" />
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <Badge variant="secondary" className="text-xs">
+                            {categoryObj?.label || duplicate.category}
+                          </Badge>
+                          <Badge variant="outline" className={`text-xs ${status?.color || ''}`}>
+                            <StatusIcon className="w-3 h-3 mr-1" />
+                            {status?.label || duplicate.status}
+                          </Badge>
+                        </div>
+                        
+                        <p className="text-sm text-foreground line-clamp-2 mb-1">
+                          {duplicate.description}
+                        </p>
+
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span>{Math.round(duplicate.distance)}m away</span>
+                          <span>•</span>
+                          <span>{date}</span>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-2 mt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            onClick={() => {
+                              setSelectedReport(duplicate);
+                              setShowDuplicateModal(false);
+                            }}
+                          >
+                            View Details
+                          </Button>
+                          
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1"
+                            onClick={async () => {
+                              await handleUpvote(duplicate.id);
+                              setShowDuplicateModal(false);
+                              toast({
+                                title: "Report Upvoted",
+                                description: "Your vote helps prioritize this issue",
+                              });
+                            }}
+                          >
+                            <ArrowUp className="w-3 h-3" />
+                            Upvote
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowDuplicateModal(false);
+                }}
+              >
+                Cancel
+              </Button>
+              
+              <Button
+                className="flex-1"
+                onClick={() => {
+                  setShowDuplicateModal(false);
+                  handleSubmitReport(true); // Bypass duplicate check
+                }}
+              >
+                Submit Anyway
+              </Button>
+            </div>
+
+            <p className="text-xs text-muted-foreground text-center">
+              By submitting anyway, you confirm this is a different issue at the same location.
+            </p>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
