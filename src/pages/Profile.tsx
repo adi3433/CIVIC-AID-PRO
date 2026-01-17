@@ -33,6 +33,7 @@ import { Label } from "@/components/ui/label";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import SecureDocuments from "@/components/SecureDocuments";
 
 const languages = ["English", "हिंदी", "ಕನ್ನಡ", "தமிழ்"];
 
@@ -199,21 +200,12 @@ export default function Profile() {
               </div>
             </div>
           )}
-
-          {/* Reputation Score */}
-          <div className="mt-4 pt-4 border-t border-border">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-muted-foreground">
-                Reputation Score
-              </span>
-              <span className="text-lg font-bold text-primary">850</span>
-            </div>
-            <Progress value={85} className="h-2" />
-            <p className="text-xs text-muted-foreground mt-1">
-              150 points to Platinum
-            </p>
-          </div>
         </Card>
+      </div>
+
+      {/* Secure Document Vault */}
+      <div className="px-4 pb-4">
+        <SecureDocuments userId={user?.id || ""} />
       </div>
 
       {/* Impact Dashboard */}
