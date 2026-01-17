@@ -485,3 +485,83 @@ export const SCAM_EXAMPLES = {
         "Your UPI refund of Rs 2,999 is pending. Complete verification: bit.ly/upi-refund",
     ],
 };
+
+// --- Payments & Utilities AI ---
+
+export interface AIBillAnalysis {
+    summary: string;
+    charges: { name: string, amount: number, isHigh: boolean, reason?: string }[];
+    total: number;
+    hiddenCharges: string[];
+    tips: string[];
+}
+
+export interface AIPrediction {
+    estimatedAmount: number;
+    confidenceRange: [number, number]; // [low, high]
+    reasoning: string;
+    trend: "increasing" | "decreasing" | "stable";
+}
+
+/**
+ * Analyze bill text/data for explanation and hidden charges
+ */
+export async function analyzeBillWithAI(billDetails: string): Promise<AIBillAnalysis> {
+    const prompt = `Analyze this utility bill details and explain it in simple terms. Identify any high charges or potential hidden fees.
+    
+BILL DATA:
+"${billDetails}"
+
+Respond ONLY with valid JSON:
+{
+  "summary": "Simple explanation of why the bill is this amount",
+  "charges": [{"name": "Charge Name", "amount": 0, "isHigh": boolean, "reason": "Why it is high"}],
+  "total": 0,
+  "hiddenCharges": ["List of unclear/suspicious charges"],
+  "tips": ["How to reduce this next time"]
+}`;
+
+    try {
+        const text = await generateContent(prompt);
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("Invalid bill analysis");
+        return JSON.parse(jsonMatch[0]);
+    } catch (error) {
+        console.error("Bill Analysis Error:", error);
+        throw error;
+    }
+}
+
+/**
+ * Predict next bill based on history
+ */
+export async function predictBillWithAI(utilityType: string, history: { date: string, amount: number }[]): Promise<AIPrediction> {
+    const historyStr = history.map(h => `${h.date}: ${h.amount}`).join(", ");
+    const prompt = `Predict the next utility bill for ${utilityType} based on this history: ${historyStr}.
+    Consider seasonal trends if transparent.
+    
+Respond ONLY with valid JSON:
+{
+  "estimatedAmount": 0,
+  "confidenceRange": [0, 0],
+  "reasoning": "Brief explanation of prediction logic",
+  "trend": "increasing" | "decreasing" | "stable"
+}`;
+
+    try {
+        const text = await generateContent(prompt);
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error("Invalid prediction");
+        return JSON.parse(jsonMatch[0]);
+    } catch (error) {
+        console.error("Bill Prediction Error:", error);
+        // Fallback
+        const lastAmount = history[0]?.amount || 0;
+        return {
+            estimatedAmount: lastAmount,
+            confidenceRange: [lastAmount * 0.9, lastAmount * 1.1],
+            reasoning: "Based on last month's usage (AI unavailable)",
+            trend: "stable"
+        };
+    }
+}

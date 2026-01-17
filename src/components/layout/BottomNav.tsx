@@ -1,4 +1,4 @@
-import { Home, FileText, Shield, Gift, User } from "lucide-react";
+import { Home, FileText, Shield, Gift, User, CreditCard } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -6,6 +6,7 @@ const navItems = [
   { icon: Home, label: "Home", path: "/" },
   { icon: FileText, label: "Report", path: "/report" },
   { icon: Shield, label: "Safety", path: "/safety" },
+  { icon: CreditCard, label: "Pay", path: "/payments" },
   { icon: Gift, label: "Schemes", path: "/schemes" },
   { icon: User, label: "Profile", path: "/profile" },
 ];

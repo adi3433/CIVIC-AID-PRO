@@ -13,6 +13,7 @@ import Login from "./pages/Login";
 import Report from "./pages/Report";
 import Safety from "./pages/Safety";
 import Schemes from "./pages/Schemes";
+import Payments from "./pages/Payments";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import EmergencyContacts from "./pages/EmergencyContacts";
@@ -57,6 +58,7 @@ const App = () => (
                           element={<SafeShelterLocator />}
                         />
                         <Route path="/schemes" element={<Schemes />} />
+                        <Route path="/payments" element={<Payments />} />
                         <Route path="/profile" element={<Profile />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
