@@ -28,7 +28,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const categories = [
   { id: "health", icon: Heart, label: "Health", color: "destructive" },
@@ -130,13 +129,12 @@ export default function Schemes() {
     try {
       setLoading(true);
       setError(null);
-      
-      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-      const prompt = `List current active Indian government schemes ${
-        category ? `for ${category} category` : "across all categories (Health, Housing, Farmer/Agriculture, Pension)"
-      }. For each scheme provide:
+      // Use Fireworks AI via helper service
+      const { generateContent } = await import('@/lib/geminiService');
+
+      const prompt = `List current active Indian government schemes ${category ? `for ${category} category` : "across all categories (Health, Housing, Farmer/Agriculture, Pension)"
+        }. For each scheme provide:
 1. Official scheme name (exact from official portal)
 2. Category (Health/Housing/Farmer/Pension)
 3. Key benefits (brief, under 100 characters)
@@ -147,12 +145,11 @@ export default function Schemes() {
 8. Official application URL (actual government portal)
 
 Format as JSON array with fields: name, category, benefits, status, deadline, eligibility, howToApply, applicationUrl.
-Provide at least 15-20 REAL active schemes with ACTUAL official URLs. Use current 2024-2025 data.`;
+Provide at least 15-20 REAL active schemes with ACTUAL official URLs. Use current 2024-2025 data.
+RETURN JSON ONLY.`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
+      const text = await generateContent(prompt);
+
       // Extract JSON from response
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
@@ -163,6 +160,7 @@ Provide at least 15-20 REAL active schemes with ACTUAL official URLs. Use curren
         }));
         setSchemes(formattedSchemes);
       } else {
+        console.error("Failed to parse schemesJSON:", text);
         throw new Error("Failed to parse schemes data");
       }
     } catch (err) {
@@ -176,8 +174,7 @@ Provide at least 15-20 REAL active schemes with ACTUAL official URLs. Use curren
   const fetchSchemeDetails = async (scheme: Scheme) => {
     try {
       setLoadingDetails(true);
-      const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+      const { generateContent } = await import('@/lib/geminiService');
 
       const prompt = `Provide complete, accurate details for the Indian government scheme: "${scheme.name}"
 
@@ -216,17 +213,16 @@ Fetch from official sources (myScheme portal, ministry websites, india.gov.in) a
   "officialApplicationUrl": "ACTUAL direct link to application portal"
 }
 
-Provide REAL, accurate information from official government sources.`;
+Provide REAL, accurate information from official government sources. RETURN JSON ONLY.`;
 
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      
+      const text = await generateContent(prompt);
+
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
         const details = JSON.parse(jsonMatch[0]);
         setSchemeDetails(details);
       } else {
+        console.error("Failed to parse scheme details JSON:", text);
         throw new Error("Failed to parse scheme details");
       }
     } catch (err) {
@@ -318,31 +314,28 @@ Provide REAL, accurate information from official government sources.`;
               variant="interactive"
               size="sm"
               onClick={() => handleCategoryClick(cat.id)}
-              className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 cursor-pointer transition-all ${
-                selectedCategory === cat.id ? 'ring-2 ring-primary' : ''
-              }`}
+              className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 cursor-pointer transition-all ${selectedCategory === cat.id ? 'ring-2 ring-primary' : ''
+                }`}
             >
               <div
-                className={`p-2 rounded-lg ${
-                  cat.color === "destructive"
-                    ? "bg-destructive/10"
-                    : cat.color === "primary"
+                className={`p-2 rounded-lg ${cat.color === "destructive"
+                  ? "bg-destructive/10"
+                  : cat.color === "primary"
                     ? "bg-primary/10"
                     : cat.color === "success"
-                    ? "bg-success/10"
-                    : "bg-warning/10"
-                }`}
+                      ? "bg-success/10"
+                      : "bg-warning/10"
+                  }`}
               >
                 <cat.icon
-                  className={`w-4 h-4 ${
-                    cat.color === "destructive"
-                      ? "text-destructive"
-                      : cat.color === "primary"
+                  className={`w-4 h-4 ${cat.color === "destructive"
+                    ? "text-destructive"
+                    : cat.color === "primary"
                       ? "text-primary"
                       : cat.color === "success"
-                      ? "text-success"
-                      : "text-warning"
-                  }`}
+                        ? "text-success"
+                        : "text-warning"
+                    }`}
                 />
               </div>
               <span className="text-sm font-medium text-foreground whitespace-nowrap">
@@ -367,9 +360,9 @@ Provide REAL, accurate information from official government sources.`;
               <AlertCircle className="w-5 h-5" />
               <p className="text-sm">{error}</p>
             </div>
-            <Button 
-              size="sm" 
-              variant="outline" 
+            <Button
+              size="sm"
+              variant="outline"
               onClick={() => fetchSchemes()}
               className="mt-3"
             >
@@ -386,7 +379,7 @@ Provide REAL, accurate information from official government sources.`;
             <h2 className="text-base font-semibold text-foreground">
               {selectedCategory ? `${selectedCategory} Schemes` : 'Popular Schemes'}
             </h2>
-            <button 
+            <button
               onClick={() => setShowAllSchemes(true)}
               className="text-sm text-primary font-medium flex items-center gap-1"
             >
@@ -429,8 +422,8 @@ Provide REAL, accurate information from official government sources.`;
                   <span className="text-xs text-muted-foreground">
                     Deadline: {scheme.deadline}
                   </span>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="default"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -453,9 +446,9 @@ Provide REAL, accurate information from official government sources.`;
             <h2 className="text-base font-semibold text-foreground">
               All Schemes ({filteredSchemes.length})
             </h2>
-            <Button 
-              size="sm" 
-              variant="ghost" 
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={() => setShowAllSchemes(false)}
               className="h-8 w-8 p-0"
             >
@@ -500,8 +493,8 @@ Provide REAL, accurate information from official government sources.`;
                   <span className="text-xs text-muted-foreground">
                     Deadline: {scheme.deadline}
                   </span>
-                  <Button 
-                    size="sm" 
+                  <Button
+                    size="sm"
                     variant="default"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -559,14 +552,14 @@ Provide REAL, accurate information from official government sources.`;
 
       {/* Scheme Details Popup/Modal */}
       {selectedScheme && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/50 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4"
           onClick={() => {
             setSelectedScheme(null);
             setSchemeDetails(null);
           }}
         >
-          <div 
+          <div
             className="bg-background w-full sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-2xl sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -764,7 +757,7 @@ Provide REAL, accurate information from official government sources.`;
                       {schemeDetails.contactInfo.website && (
                         <div className="flex items-center gap-2">
                           <Globe className="w-4 h-4 text-primary" />
-                          <a 
+                          <a
                             href={schemeDetails.contactInfo.website}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -779,7 +772,7 @@ Provide REAL, accurate information from official government sources.`;
 
                   {/* Apply Button */}
                   <div className="sticky bottom-0 bg-background pt-4 pb-2 border-t -mx-4 px-4">
-                    <Button 
+                    <Button
                       className="w-full"
                       size="lg"
                       onClick={handleApplyNow}
@@ -811,7 +804,6 @@ Provide REAL, accurate information from official government sources.`;
   );
 }
 
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
 const CACHE_DURATION = 3600000; // 1 hour
 
 interface SchemeCache {
@@ -825,13 +817,13 @@ export const schemesService = {
   async fetchSchemes(category?: string, query?: string) {
     const cacheKey = `schemes-${category || 'all'}-${query || ''}`;
     const cached = cache.get(cacheKey);
-    
+
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       return cached.data;
     }
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    
+    const { generateContent } = await import('@/lib/geminiService');
+
     const prompt = `Fetch real, current (2024-2025) Indian government schemes from official sources like myScheme portal, india.gov.in, data.gov.in, and ministry websites.
     
 ${category ? `Filter by category: ${category}` : 'Include all categories: Health, Housing, Agriculture/Farmer, Pension, Education, Employment'}
@@ -850,23 +842,23 @@ For EACH scheme, provide ACCURATE information:
 10. Implementing ministry/department
 
 Return as JSON array with fields: name, category, description, benefits, eligibility, documents, status, deadline, applicationUrl, ministry.
-Provide 15-20 REAL active schemes. Prioritize central government schemes and major state schemes.`;
+Provide 15-20 REAL active schemes. Prioritize central government schemes and major state schemes.
+RETURN JSON ONLY.`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
-    
+    const text = await generateContent(prompt);
+
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) throw new Error("Invalid response format");
-    
+
     const schemes = JSON.parse(jsonMatch[0]);
     cache.set(cacheKey, { data: schemes, timestamp: Date.now() });
-    
+
     return schemes;
   },
 
   async checkEligibility(schemeId: string, userProfile: UserProfile) {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    
+    const { generateContent } = await import('@/lib/geminiService');
+
     const prompt = `Analyze eligibility for scheme: ${schemeId}
 
 User Profile:
@@ -887,19 +879,19 @@ Analyze against actual scheme rules and return JSON:
   "matchedCriteria": ["criterion1", "criterion2"],
   "unmatchedCriteria": ["criterion1"],
   "recommendations": ["suggestion1", "suggestion2"]
-}`;
+}
+RETURN JSON ONLY.`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const text = await generateContent(prompt);
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    
+
     if (!jsonMatch) throw new Error("Invalid eligibility response");
     return JSON.parse(jsonMatch[0]);
   },
 
   async fetchSchemeDetails(schemeId: string, schemeName: string) {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    
+    const { generateContent } = await import('@/lib/geminiService');
+
     const prompt = `Provide complete details for: ${schemeName}
 
 Fetch from official sources and return comprehensive JSON:
@@ -932,30 +924,30 @@ Fetch from official sources and return comprehensive JSON:
     "website": "url"
   },
   "officialApplicationUrl": "direct link to application portal"
-}`;
+}
+RETURN JSON ONLY.`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const text = await generateContent(prompt);
     const jsonMatch = text.match(/\{[\s\S]*\}/);
-    
+
     if (!jsonMatch) throw new Error("Invalid details response");
     return JSON.parse(jsonMatch[0]);
   },
 
   async searchByLifeEvent(query: string, userProfile?: Partial<UserProfile>) {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    
+    const { generateContent } = await import('@/lib/geminiService');
+
     const prompt = `User life event query: "${query}"
 ${userProfile ? `\nUser context: Age ${userProfile.age}, Location ${userProfile.location}, Income ₹${userProfile.income}` : ''}
 
 Identify relevant Indian government schemes for this life situation.
 Return JSON array of scheme names and brief reasons for recommendation.
-Format: [{"scheme": "name", "relevance": "why it matches", "priority": "high/medium"}]`;
+Format: [{"scheme": "name", "relevance": "why it matches", "priority": "high/medium"}]
+RETURN JSON ONLY.`;
 
-    const result = await model.generateContent(prompt);
-    const text = result.response.text();
+    const text = await generateContent(prompt);
     const jsonMatch = text.match(/\[[\s\S]*\]/);
-    
+
     if (!jsonMatch) return [];
     return JSON.parse(jsonMatch[0]);
   }

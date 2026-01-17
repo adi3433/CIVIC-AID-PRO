@@ -42,13 +42,13 @@ export interface AIURLAnalysis {
 
 // Fireworks API Configuration
 const FIREWORKS_API_URL = "https://api.fireworks.ai/inference/v1/chat/completions";
-const MODEL_ID = "accounts/fireworks/models/gpt-oss-120b";
+export const DEFAULT_MODEL_ID = "accounts/fireworks/models/gpt-oss-120b";
 
 let fireworksApiKey: string | null = null;
 
 export function initializeFireworks(apiKey: string): void {
     fireworksApiKey = apiKey;
-    console.log("✅ Fireworks AI initialized with GPT-OSS-120B");
+    console.log("✅ Fireworks AI initialized");
 }
 
 export function isFireworksInitialized(): boolean {
@@ -60,15 +60,30 @@ export const initializeGemini = initializeFireworks;
 export const isGeminiInitialized = isFireworksInitialized;
 
 /**
- * Call Fireworks API with GPT-OSS-120B
+ * Generic function to generate content using Fireworks AI
+ * Allows specifying a custom model (e.g., gemma-3-12b-it)
  */
-async function callFireworksAPI(messages: { role: string; content: string }[]): Promise<string> {
+export async function generateContent(prompt: string, model: string = DEFAULT_MODEL_ID): Promise<string> {
+    return callFireworksAPI([{ role: "user", content: prompt }], model);
+}
+
+/**
+ * Call Fireworks API
+ */
+async function callFireworksAPI(messages: { role: string; content: string }[], model: string = DEFAULT_MODEL_ID): Promise<string> {
     if (!fireworksApiKey) {
-        console.error("❌ Fireworks API Key is MISSING");
-        throw new Error("Fireworks API not initialized");
+        // Auto-initialize from env if available (lazy load)
+        const envKey = import.meta.env.VITE_FIREWORKS_API_KEY;
+        if (envKey) {
+            console.log("🔄 Auto-initializing Fireworks AI from environment...");
+            fireworksApiKey = envKey;
+        } else {
+            console.error("❌ Fireworks API Key is MISSING");
+            throw new Error("Fireworks API not initialized");
+        }
     }
 
-    console.log(`🚀 Sending request to Fireworks AI... (Key length: ${fireworksApiKey.length})`);
+    console.log(`🚀 Sending request to Fireworks AI (${model})...`);
 
     try {
         const response = await fetch(FIREWORKS_API_URL, {
@@ -79,13 +94,13 @@ async function callFireworksAPI(messages: { role: string; content: string }[]): 
                 "Authorization": `Bearer ${fireworksApiKey}`
             },
             body: JSON.stringify({
-                model: MODEL_ID,
-                max_tokens: 1024, // Reduced from 4096 to prevent 408 Timeouts
+                model: model,
+                max_tokens: 4096, // Higher limit for generation tasks (schemes), lower for detection if needed
                 top_p: 1,
                 top_k: 40,
                 presence_penalty: 0,
                 frequency_penalty: 0,
-                temperature: 0.1, // Very low temperature for consistent JSON
+                temperature: 0.7, // Higher temp for creative/informational generation
                 messages
             })
         });
@@ -97,7 +112,7 @@ async function callFireworksAPI(messages: { role: string; content: string }[]): 
         }
 
         const data = await response.json();
-        console.log("✅ Raw API Response Data:", data);
+        // console.log("✅ Raw API Response Data:", data); // verbose
         return data.choices[0]?.message?.content || "";
     } catch (error) {
         console.error("❌ Network/Fetch Error:", error);
