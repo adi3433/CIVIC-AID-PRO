@@ -22,6 +22,7 @@ import SafeShelterLocator from "./pages/SafeShelterLocator";
 import Library from "./pages/Library";
 import LocalOffices from "./pages/LocalOffices";
 import ProcessNavigator from "./pages/ProcessNavigator";
+import AntiBribery from "./pages/AntiBribery";
 
 const queryClient = new QueryClient();
 
@@ -72,6 +73,7 @@ const App = () => (
                           path="/process-navigator"
                           element={<ProcessNavigator />}
                         />
+                        <Route path="/anti-bribery" element={<AntiBribery />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </MobileLayout>

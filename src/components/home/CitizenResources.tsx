@@ -1,4 +1,4 @@
-import { Book, Building2, MapIcon, ChevronRight } from "lucide-react";
+import { Book, Building2, MapIcon, ChevronRight, Shield } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 
@@ -32,6 +32,15 @@ export function CitizenResources() {
       color: "bg-green-500/10 text-green-500 border-green-500/30",
       iconBg: "bg-green-500/20",
       path: "/process-navigator",
+    },
+    {
+      id: "anti-bribery",
+      title: "Anti-Bribery",
+      description: "Verify official rates for fines & fees",
+      icon: Shield,
+      color: "bg-orange-500/10 text-orange-500 border-orange-500/30",
+      iconBg: "bg-orange-500/20",
+      path: "/anti-bribery",
     },
   ];
 
