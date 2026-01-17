@@ -2,30 +2,21 @@ import { useState, useEffect, useRef } from "react";
 import {
   Map,
   AlertTriangle,
-  Phone,
   Shield,
-  Link2,
   ChevronRight,
   AlertOctagon,
   Droplets,
   Lightbulb,
   Car,
   PhoneCall,
-  Zap,
   AlertCircle,
-  Toggle2,
   Navigation,
   Eye,
   EyeOff,
-  Layers,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
@@ -38,6 +29,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+
+// Digital Safety Components
+import { DigitalSafetySection } from "@/components/digital-safety/DigitalSafetySection";
 
 // Fix Leaflet marker icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -320,8 +314,6 @@ const SafetyScore = ({
 };
 
 export default function Safety() {
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [suspiciousLink, setSuspiciousLink] = useState("");
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
@@ -548,13 +540,13 @@ export default function Safety() {
                       const avgIntensity =
                         visibleCount > 0
                           ? (
-                              (hazardPoints.reduce(
-                                (sum, p) => sum + p.intensity,
-                                0,
-                              ) /
-                                hazardPoints.length) *
-                              100
-                            ).toFixed(0)
+                            (hazardPoints.reduce(
+                              (sum, p) => sum + p.intensity,
+                              0,
+                            ) /
+                              hazardPoints.length) *
+                            100
+                          ).toFixed(0)
                           : 0;
 
                       return (
@@ -632,22 +624,20 @@ export default function Safety() {
                   <Card key={alert.id} variant="interactive" size="sm">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`p-2 rounded-lg ${
-                          alert.severity === "high"
-                            ? "bg-destructive/10"
-                            : alert.severity === "medium"
-                              ? "bg-warning/10"
-                              : "bg-info/10"
-                        }`}
+                        className={`p-2 rounded-lg ${alert.severity === "high"
+                          ? "bg-destructive/10"
+                          : alert.severity === "medium"
+                            ? "bg-warning/10"
+                            : "bg-info/10"
+                          }`}
                       >
                         <alert.icon
-                          className={`w-5 h-5 ${
-                            alert.severity === "high"
-                              ? "text-destructive"
-                              : alert.severity === "medium"
-                                ? "text-warning"
-                                : "text-info"
-                          }`}
+                          className={`w-5 h-5 ${alert.severity === "high"
+                            ? "text-destructive"
+                            : alert.severity === "medium"
+                              ? "text-warning"
+                              : "text-info"
+                            }`}
                         />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -702,22 +692,20 @@ export default function Safety() {
                   <Card key={contact.name} variant="interactive" size="sm">
                     <div className="flex items-center gap-2">
                       <div
-                        className={`p-1.5 rounded-lg ${
-                          contact.color === "destructive"
-                            ? "bg-destructive/10"
-                            : contact.color === "warning"
-                              ? "bg-warning/10"
-                              : "bg-secondary/10"
-                        }`}
+                        className={`p-1.5 rounded-lg ${contact.color === "destructive"
+                          ? "bg-destructive/10"
+                          : contact.color === "warning"
+                            ? "bg-warning/10"
+                            : "bg-secondary/10"
+                          }`}
                       >
                         <PhoneCall
-                          className={`w-4 h-4 ${
-                            contact.color === "destructive"
-                              ? "text-destructive"
-                              : contact.color === "warning"
-                                ? "text-warning"
-                                : "text-secondary"
-                          }`}
+                          className={`w-4 h-4 ${contact.color === "destructive"
+                            ? "text-destructive"
+                            : contact.color === "warning"
+                              ? "text-warning"
+                              : "text-secondary"
+                            }`}
                         />
                       </div>
                       <div>
@@ -737,54 +725,7 @@ export default function Safety() {
 
           {/* Digital Safety Tab */}
           <TabsContent value="digital" className="mt-4 pb-8">
-            <div className="py-4">
-              <h2 className="text-base font-semibold text-foreground mb-3">
-                Scam Detection
-              </h2>
-              <div className="space-y-3">
-                <Card variant="default" size="sm">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Phone className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium text-foreground">
-                      Check Phone Number
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Input
-                      type="tel"
-                      placeholder="Enter phone number"
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button size="sm" variant="default">
-                      Check
-                    </Button>
-                  </div>
-                </Card>
-
-                <Card variant="default" size="sm">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Link2 className="w-4 h-4 text-secondary" />
-                    <span className="text-sm font-medium text-foreground">
-                      Check Suspicious Link
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    <Input
-                      type="url"
-                      placeholder="Paste link here"
-                      value={suspiciousLink}
-                      onChange={(e) => setSuspiciousLink(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Button size="sm" variant="default">
-                      Verify
-                    </Button>
-                  </div>
-                </Card>
-              </div>
-            </div>
+            <DigitalSafetySection />
           </TabsContent>
         </Tabs>
       </div>
