@@ -303,6 +303,10 @@ export default function Safety() {
     noise: true,
   });
   const [categorySheetOpen, setCategorySheetOpen] = useState(false);
+  const [sosHoldProgress, setSosHoldProgress] = useState(0);
+  const [sosHolding, setSosHolding] = useState(false);
+  const sosTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const sosProgressRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
 
   // Generate dummy reports for demo purposes
@@ -408,6 +412,42 @@ export default function Safety() {
       ...prev,
       [category]: !prev[category],
     }));
+  };
+
+  const handleSosStart = () => {
+    setSosHolding(true);
+    setSosHoldProgress(0);
+
+    // Progress animation (updates every 30ms for smooth animation)
+    let progress = 0;
+    sosProgressRef.current = setInterval(() => {
+      progress += 1;
+      setSosHoldProgress(progress);
+    }, 30);
+
+    // Trigger emergency call after 3 seconds
+    sosTimerRef.current = setTimeout(() => {
+      // Clear intervals
+      if (sosProgressRef.current) clearInterval(sosProgressRef.current);
+      if (sosTimerRef.current) clearTimeout(sosTimerRef.current);
+
+      // Reset state
+      setSosHolding(false);
+      setSosHoldProgress(0);
+
+      // Trigger phone dialer with emergency number
+      window.location.href = "tel:100";
+    }, 3000);
+  };
+
+  const handleSosEnd = () => {
+    // Clear timers
+    if (sosTimerRef.current) clearTimeout(sosTimerRef.current);
+    if (sosProgressRef.current) clearInterval(sosProgressRef.current);
+
+    // Reset state
+    setSosHolding(false);
+    setSosHoldProgress(0);
   };
 
   return (
@@ -642,9 +682,23 @@ export default function Safety() {
               {/* SOS Button */}
               <Card
                 variant="destructive"
-                className="mb-4 border-2 border-destructive"
+                className="mb-4 border-2 border-destructive cursor-pointer select-none relative overflow-hidden"
+                onMouseDown={handleSosStart}
+                onMouseUp={handleSosEnd}
+                onMouseLeave={handleSosEnd}
+                onTouchStart={handleSosStart}
+                onTouchEnd={handleSosEnd}
               >
-                <div className="flex items-center gap-4">
+                {/* Progress bar */}
+                {sosHolding && (
+                  <div
+                    className="absolute inset-0 bg-destructive-foreground/20 transition-all duration-75"
+                    style={{
+                      width: `${(sosHoldProgress / 100) * 100}%`,
+                    }}
+                  />
+                )}
+                <div className="flex items-center gap-4 relative z-10">
                   <div className="p-3 bg-destructive-foreground/20 rounded-xl animate-pulse">
                     <AlertOctagon className="w-8 h-8 text-destructive-foreground" />
                   </div>
@@ -653,7 +707,9 @@ export default function Safety() {
                       SOS Emergency
                     </h3>
                     <p className="text-destructive-foreground/80 text-sm">
-                      Press and hold for 3 seconds
+                      {sosHolding
+                        ? `Calling in ${Math.ceil((3000 - sosHoldProgress * 30) / 1000)}s...`
+                        : "Press and hold for 3 seconds"}
                     </p>
                   </div>
                 </div>
