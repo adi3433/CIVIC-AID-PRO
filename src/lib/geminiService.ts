@@ -61,16 +61,16 @@ export const isGeminiInitialized = isFireworksInitialized;
 
 /**
  * Generic function to generate content using Fireworks AI
- * Allows specifying a custom model (e.g., gemma-3-12b-it)
+ * Allows specifying a custom model (e.g., gemma-3-12b-it) and max tokens
  */
-export async function generateContent(prompt: string, model: string = DEFAULT_MODEL_ID): Promise<string> {
-    return callFireworksAPI([{ role: "user", content: prompt }], model);
+export async function generateContent(prompt: string, model: string = DEFAULT_MODEL_ID, maxTokens: number = 4096): Promise<string> {
+    return callFireworksAPI([{ role: "user", content: prompt }], model, maxTokens);
 }
 
 /**
  * Call Fireworks API
  */
-async function callFireworksAPI(messages: { role: string; content: string }[], model: string = DEFAULT_MODEL_ID): Promise<string> {
+async function callFireworksAPI(messages: { role: string; content: string }[], model: string = DEFAULT_MODEL_ID, maxTokens: number = 4096): Promise<string> {
     if (!fireworksApiKey) {
         // Auto-initialize from env if available (lazy load)
         const envKey = import.meta.env.VITE_FIREWORKS_API_KEY;
@@ -83,7 +83,7 @@ async function callFireworksAPI(messages: { role: string; content: string }[], m
         }
     }
 
-    console.log(`🚀 Sending request to Fireworks AI (${model})...`);
+    console.log(`🚀 Sending request to Fireworks AI (${model}) [tokens: ${maxTokens}]...`);
 
     try {
         const response = await fetch(FIREWORKS_API_URL, {
@@ -95,7 +95,7 @@ async function callFireworksAPI(messages: { role: string; content: string }[], m
             },
             body: JSON.stringify({
                 model: model,
-                max_tokens: 4096, // Higher limit for generation tasks (schemes), lower for detection if needed
+                max_tokens: maxTokens, // Use the passed maxTokens
                 top_p: 1,
                 top_k: 40,
                 presence_penalty: 0,

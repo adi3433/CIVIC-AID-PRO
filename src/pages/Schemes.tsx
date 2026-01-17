@@ -145,7 +145,7 @@ export default function Schemes() {
 8. Official application URL (actual government portal)
 
 Format as JSON array with fields: name, category, benefits, status, deadline, eligibility, howToApply, applicationUrl.
-Provide at least 15-20 REAL active schemes with ACTUAL official URLs. Use current 2024-2025 data.
+Provide 10 REAL active schemes with ACTUAL official URLs. Use current 2024-2025 data.
 RETURN JSON ONLY.`;
 
       const text = await generateContent(prompt);
@@ -842,7 +842,7 @@ For EACH scheme, provide ACCURATE information:
 10. Implementing ministry/department
 
 Return as JSON array with fields: name, category, description, benefits, eligibility, documents, status, deadline, applicationUrl, ministry.
-Provide 15-20 REAL active schemes. Prioritize central government schemes and major state schemes.
+Provide 10 REAL active schemes. Prioritize central government schemes and major state schemes.
 RETURN JSON ONLY.`;
 
     const text = await generateContent(prompt);
