@@ -5,21 +5,19 @@ import {
   Shield,
   ChevronRight,
   AlertOctagon,
-  Droplets,
-  Lightbulb,
   Car,
   PhoneCall,
   AlertCircle,
   Navigation,
   Eye,
   EyeOff,
+  Lightbulb,
 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Toggle } from "@/components/ui/toggle";
 import { useToast } from "@/hooks/use-toast";
 import {
   Sheet,
@@ -27,7 +25,6 @@ import {
   SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 
 // Digital Safety Components
@@ -44,45 +41,12 @@ L.Icon.Default.mergeOptions({
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
 
-const safetyAlerts = [
-  {
-    id: 1,
-    type: "accident",
-    title: "Accident-Prone Zone",
-    location: "Silk Board Junction",
-    severity: "high",
-    icon: Car,
-  },
-  {
-    id: 2,
-    type: "flood",
-    title: "Flood Risk Area",
-    location: "KR Market Underpass",
-    severity: "medium",
-    icon: Droplets,
-  },
-  {
-    id: 3,
-    type: "lighting",
-    title: "Poor Lighting",
-    location: "5th Cross, Near Park",
-    severity: "low",
-    icon: Lightbulb,
-  },
-];
-
 const emergencyContacts = [
   { name: "Police", number: "100", color: "destructive" },
   { name: "Ambulance", number: "108", color: "destructive" },
   { name: "Fire", number: "101", color: "warning" },
   { name: "Women Helpline", number: "181", color: "secondary" },
 ];
-
-const severityColors = {
-  high: "bg-destructive/10 text-destructive border-destructive/30",
-  medium: "bg-warning/10 text-warning border-warning/30",
-  low: "bg-info/10 text-info border-info/30",
-};
 
 // Hazard types and their properties
 const HAZARD_TYPES = {
@@ -540,13 +504,13 @@ export default function Safety() {
                       const avgIntensity =
                         visibleCount > 0
                           ? (
-                            (hazardPoints.reduce(
-                              (sum, p) => sum + p.intensity,
-                              0,
-                            ) /
-                              hazardPoints.length) *
-                            100
-                          ).toFixed(0)
+                              (hazardPoints.reduce(
+                                (sum, p) => sum + p.intensity,
+                                0,
+                              ) /
+                                hazardPoints.length) *
+                              100
+                            ).toFixed(0)
                           : 0;
 
                       return (
@@ -614,52 +578,6 @@ export default function Safety() {
               </Sheet>
             )}
 
-            {/* Safety Alerts */}
-            <div className="py-4">
-              <h2 className="text-base font-semibold text-foreground mb-3">
-                Safety Alerts
-              </h2>
-              <div className="space-y-3">
-                {safetyAlerts.map((alert) => (
-                  <Card key={alert.id} variant="interactive" size="sm">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`p-2 rounded-lg ${alert.severity === "high"
-                          ? "bg-destructive/10"
-                          : alert.severity === "medium"
-                            ? "bg-warning/10"
-                            : "bg-info/10"
-                          }`}
-                      >
-                        <alert.icon
-                          className={`w-5 h-5 ${alert.severity === "high"
-                            ? "text-destructive"
-                            : alert.severity === "medium"
-                              ? "text-warning"
-                              : "text-info"
-                            }`}
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-foreground text-sm">
-                          {alert.title}
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          {alert.location}
-                        </p>
-                      </div>
-                      <Badge
-                        variant="outline"
-                        className={`text-xs ${severityColors[alert.severity]}`}
-                      >
-                        {alert.severity}
-                      </Badge>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-
             {/* Emergency Section */}
             <div className="py-4 pb-8">
               <h2 className="text-base font-semibold text-foreground mb-3">
@@ -692,20 +610,22 @@ export default function Safety() {
                   <Card key={contact.name} variant="interactive" size="sm">
                     <div className="flex items-center gap-2">
                       <div
-                        className={`p-1.5 rounded-lg ${contact.color === "destructive"
-                          ? "bg-destructive/10"
-                          : contact.color === "warning"
-                            ? "bg-warning/10"
-                            : "bg-secondary/10"
-                          }`}
+                        className={`p-1.5 rounded-lg ${
+                          contact.color === "destructive"
+                            ? "bg-destructive/10"
+                            : contact.color === "warning"
+                              ? "bg-warning/10"
+                              : "bg-secondary/10"
+                        }`}
                       >
                         <PhoneCall
-                          className={`w-4 h-4 ${contact.color === "destructive"
-                            ? "text-destructive"
-                            : contact.color === "warning"
-                              ? "text-warning"
-                              : "text-secondary"
-                            }`}
+                          className={`w-4 h-4 ${
+                            contact.color === "destructive"
+                              ? "text-destructive"
+                              : contact.color === "warning"
+                                ? "text-warning"
+                                : "text-secondary"
+                          }`}
                         />
                       </div>
                       <div>
