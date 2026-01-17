@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { BottomNav } from "./BottomNav";
+import { VoiceNavigationButton } from "@/components/VoiceNavigationButton";
 
 interface MobileLayoutProps {
   children: ReactNode;
@@ -8,10 +9,9 @@ interface MobileLayoutProps {
 export function MobileLayout({ children }: MobileLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
-      <main className="pb-20 max-w-lg mx-auto">
-        {children}
-      </main>
+      <main className="pb-20 max-w-lg mx-auto">{children}</main>
       <BottomNav />
+      <VoiceNavigationButton />
     </div>
   );
 }

@@ -1,0 +1,276 @@
+{
+  "intents": [
+    {
+      "id": "home",
+      "route": "/",
+      "keywords": ["home", "dashboard", "main page", "start", "beginning"],
+      "description": "Navigate to home dashboard with announcements and quick actions",
+      "examples": ["Go home", "Take me to home", "Show dashboard"]
+    },
+    {
+      "id": "report_issue",
+      "route": "/report",
+      "keywords": [
+        "report",
+        "issue",
+        "problem",
+        "complaint",
+        "pothole",
+        "garbage",
+        "streetlight",
+        "drainage",
+        "water leak",
+        "noise"
+      ],
+      "description": "Report civic issues like potholes, garbage, streetlights, drainage, water leaks, or noise complaints",
+      "examples": [
+        "Report a pothole",
+        "I want to report an issue",
+        "How to file a complaint",
+        "Report garbage pile",
+        "Broken streetlight"
+      ]
+    },
+    {
+      "id": "safety",
+      "route": "/safety",
+      "keywords": [
+        "safety",
+        "hazard",
+        "danger",
+        "risk",
+        "crime",
+        "emergency map",
+        "safety map",
+        "heatmap"
+      ],
+      "description": "View safety heatmap showing hazards, crime areas, and safety score",
+      "examples": [
+        "Is this area safe",
+        "Show safety map",
+        "Check crime areas",
+        "Safety information"
+      ]
+    },
+    {
+      "id": "digital_safety",
+      "route": "/safety",
+      "keywords": [
+        "scam",
+        "fraud",
+        "phishing",
+        "fake message",
+        "suspicious link",
+        "digital safety",
+        "online safety",
+        "cyber security"
+      ],
+      "description": "Digital safety tools to detect scams, analyze messages, check links, and identify fraud",
+      "examples": [
+        "Check if this is a scam",
+        "Analyze this message",
+        "Is this link safe",
+        "Detect fraud"
+      ]
+    },
+    {
+      "id": "emergency_contacts",
+      "route": "/safety/emergency-contacts",
+      "keywords": [
+        "emergency",
+        "police",
+        "ambulance",
+        "fire",
+        "helpline",
+        "emergency number",
+        "call help"
+      ],
+      "description": "Access emergency contact numbers: Police (100), Ambulance (108), Fire (101), Women Helpline (181), etc.",
+      "examples": [
+        "Emergency numbers",
+        "Call ambulance",
+        "Police number",
+        "Women helpline"
+      ]
+    },
+    {
+      "id": "safety_checkin",
+      "route": "/safety/check-in",
+      "keywords": [
+        "check-in",
+        "safety check",
+        "timer",
+        "alert",
+        "notify contacts",
+        "track me"
+      ],
+      "description": "Set timed safety check-ins that alert emergency contacts if you don't confirm safety",
+      "examples": [
+        "Safety check-in",
+        "Set timer",
+        "Alert my contacts",
+        "Track my safety"
+      ]
+    },
+    {
+      "id": "shelter_locator",
+      "route": "/safety/shelter-locator",
+      "keywords": [
+        "shelter",
+        "safe place",
+        "hospital",
+        "relief camp",
+        "emergency shelter",
+        "nearest hospital"
+      ],
+      "description": "Find nearest shelters, hospitals, relief camps, and safe zones during emergencies",
+      "examples": [
+        "Find shelter",
+        "Nearest hospital",
+        "Emergency shelter",
+        "Where is safe place"
+      ]
+    },
+    {
+      "id": "schemes",
+      "route": "/schemes",
+      "keywords": [
+        "scheme",
+        "government scheme",
+        "benefits",
+        "subsidy",
+        "yojana",
+        "program",
+        "eligibility",
+        "PM Awas",
+        "Ayushman Bharat"
+      ],
+      "description": "Discover government schemes, benefits, subsidies, and check eligibility",
+      "examples": [
+        "Government schemes",
+        "PM Awas Yojana",
+        "Check eligibility",
+        "What schemes am I eligible for",
+        "Housing scheme"
+      ]
+    },
+    {
+      "id": "payments",
+      "route": "/payments",
+      "keywords": [
+        "pay",
+        "payment",
+        "bill",
+        "electricity",
+        "water bill",
+        "utility",
+        "invoice",
+        "pay bill"
+      ],
+      "description": "Pay utility bills: electricity, water, gas, and other payments",
+      "examples": [
+        "Pay electricity bill",
+        "How to pay water bill",
+        "Make payment",
+        "Pay my bill"
+      ]
+    },
+    {
+      "id": "profile",
+      "route": "/profile",
+      "keywords": [
+        "profile",
+        "account",
+        "settings",
+        "my profile",
+        "edit profile",
+        "logout",
+        "sign out"
+      ],
+      "description": "View and edit your profile, manage settings, and account information",
+      "examples": ["My profile", "Edit profile", "Account settings", "Logout"]
+    },
+    {
+      "id": "library",
+      "route": "/library",
+      "keywords": [
+        "library",
+        "information",
+        "guide",
+        "knowledge",
+        "learn",
+        "citizen rights",
+        "how to",
+        "rights",
+        "offline guide"
+      ],
+      "description": "Access offline information library with guides on citizen rights, schemes, healthcare, property, employment",
+      "examples": [
+        "Information library",
+        "Citizen rights",
+        "How to register property",
+        "Learn about schemes"
+      ]
+    },
+    {
+      "id": "local_offices",
+      "route": "/local-offices",
+      "keywords": [
+        "office",
+        "government office",
+        "collector",
+        "municipality",
+        "taluk office",
+        "contact office",
+        "address",
+        "phone number"
+      ],
+      "description": "Find local government offices with addresses and contact numbers: Collector Office, Taluk Office, Municipality, Police Station",
+      "examples": [
+        "Collector office",
+        "Municipality contact",
+        "Government office address",
+        "Taluk office number"
+      ]
+    },
+    {
+      "id": "process_navigator",
+      "route": "/process-navigator",
+      "keywords": [
+        "application",
+        "status",
+        "track application",
+        "progress",
+        "pending",
+        "application status",
+        "building permit",
+        "next steps"
+      ],
+      "description": "Track your application status and see next steps for building permits, schemes, and other processes",
+      "examples": [
+        "Track my application",
+        "Application status",
+        "What are next steps",
+        "Building permit progress"
+      ]
+    },
+    {
+      "id": "location_share",
+      "route": "/safety",
+      "keywords": [
+        "share location",
+        "send location",
+        "emergency location",
+        "where am I",
+        "current location"
+      ],
+      "description": "Share your current location with emergency contacts",
+      "examples": [
+        "Share my location",
+        "Send location to contacts",
+        "Where am I",
+        "Emergency location share"
+      ]
+    }
+  ]
+}
