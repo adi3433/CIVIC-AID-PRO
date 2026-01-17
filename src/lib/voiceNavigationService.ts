@@ -2,7 +2,8 @@ import intentsMapping from "./intentsMapping.json";
 
 interface Intent {
   id: string;
-  route: string;
+  route?: string;
+  action?: string;
   keywords: string[];
   description: string;
   examples: string[];
@@ -11,6 +12,7 @@ interface Intent {
 interface VoiceNavigationResult {
   success: boolean;
   route?: string;
+  action?: string;
   intent?: Intent;
   confidence?: number;
   transcript?: string;
@@ -240,6 +242,7 @@ export async function processVoiceNavigation(): Promise<VoiceNavigationResult> {
     return {
       success: true,
       route: match.intent.route,
+      action: match.intent.action,
       intent: match.intent,
       confidence: match.confidence,
       transcript,

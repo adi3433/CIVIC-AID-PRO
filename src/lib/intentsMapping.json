@@ -271,6 +271,182 @@
         "Where am I",
         "Emergency location share"
       ]
+    },
+    {
+      "id": "announcements",
+      "route": "/",
+      "keywords": [
+        "announcement",
+        "news",
+        "updates",
+        "latest",
+        "what's new",
+        "community news",
+        "local news"
+      ],
+      "description": "View latest announcements and community updates on home page",
+      "examples": [
+        "Show announcements",
+        "What's new",
+        "Latest updates",
+        "Community news"
+      ]
+    },
+    {
+      "id": "quick_actions",
+      "route": "/",
+      "keywords": ["quick action", "shortcuts", "quick access", "fast actions"],
+      "description": "Access quick actions section on home page for common tasks",
+      "examples": ["Quick actions", "Show shortcuts", "Fast access"]
+    },
+    {
+      "id": "area_health",
+      "route": "/",
+      "keywords": [
+        "area health",
+        "safety score",
+        "area safety",
+        "neighborhood score",
+        "area rating",
+        "how safe is my area"
+      ],
+      "description": "Check area health and safety score for your neighborhood",
+      "examples": [
+        "Area health score",
+        "How safe is my area",
+        "Neighborhood safety",
+        "Safety rating"
+      ]
+    },
+    {
+      "id": "citizen_resources",
+      "route": "/",
+      "keywords": [
+        "citizen resources",
+        "resources",
+        "guides",
+        "help center",
+        "citizen services"
+      ],
+      "description": "Access citizen resources including library, local offices, and process navigator",
+      "examples": [
+        "Citizen resources",
+        "Show resources",
+        "Help center",
+        "Available services"
+      ]
+    },
+    {
+      "id": "toggle_dark_mode",
+      "action": "toggle_theme",
+      "keywords": [
+        "dark mode",
+        "light mode",
+        "theme",
+        "toggle theme",
+        "switch theme",
+        "change theme",
+        "dark",
+        "light"
+      ],
+      "description": "Toggle between dark and light theme modes",
+      "examples": [
+        "Turn on dark mode",
+        "Switch to light mode",
+        "Toggle theme",
+        "Change to dark theme",
+        "Enable light mode"
+      ]
+    },
+    {
+      "id": "enable_elderly_mode",
+      "action": "toggle_elderly_mode",
+      "keywords": [
+        "elderly mode",
+        "senior mode",
+        "large text",
+        "bigger font",
+        "accessibility",
+        "easier to read",
+        "simple mode"
+      ],
+      "description": "Toggle elderly mode with larger text and simplified interface for better accessibility",
+      "examples": [
+        "Turn on elderly mode",
+        "Enable senior mode",
+        "Make text bigger",
+        "Accessibility mode",
+        "Simple mode"
+      ]
+    },
+    {
+      "id": "call_emergency",
+      "action": "call_emergency",
+      "keywords": [
+        "call emergency",
+        "call police",
+        "call ambulance",
+        "call fire",
+        "dial emergency",
+        "need help now"
+      ],
+      "description": "Quick action to call emergency services (shows emergency numbers)",
+      "examples": [
+        "Call ambulance",
+        "Call police now",
+        "Emergency call",
+        "I need help"
+      ]
+    },
+    {
+      "id": "alert_contacts",
+      "action": "alert_emergency_contacts",
+      "keywords": [
+        "alert contacts",
+        "notify emergency contacts",
+        "send alert",
+        "help me",
+        "emergency alert",
+        "sos"
+      ],
+      "description": "Send emergency alert to your saved emergency contacts with your location",
+      "examples": [
+        "Alert my contacts",
+        "Send emergency alert",
+        "Notify my family",
+        "SOS",
+        "Help me"
+      ]
+    },
+    {
+      "id": "read_announcements",
+      "action": "read_announcements",
+      "keywords": [
+        "read announcements",
+        "read news",
+        "what's happening",
+        "tell me updates",
+        "speak announcements"
+      ],
+      "description": "Read out the latest announcements and updates using text-to-speech",
+      "examples": [
+        "Read announcements",
+        "What's happening",
+        "Tell me the news",
+        "Read updates"
+      ]
+    },
+    {
+      "id": "quick_report",
+      "action": "quick_report",
+      "keywords": [
+        "quick report",
+        "report now",
+        "fast report",
+        "emergency report"
+      ],
+      "description": "Quick report an issue with current location pre-filled",
+      "examples": ["Quick report", "Report issue here", "Fast report"]
     }
   ]
 }

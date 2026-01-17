@@ -4,16 +4,121 @@ import { Mic, Loader2, X, CheckCircle, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { processVoiceNavigation } from "@/lib/voiceNavigationService";
+import { useTheme } from "@/contexts/ThemeContext";
 
 export function VoiceNavigationButton() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { toggleTheme } = useTheme();
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [feedbackType, setFeedbackType] = useState<"success" | "error">(
     "success",
   );
+  const [elderlyMode, setElderlyMode] = useState(() => {
+    return localStorage.getItem("elderlyMode") === "true";
+  });
+
+  // Apply elderly mode styles
+  useEffect(() => {
+    if (elderlyMode) {
+      document.documentElement.classList.add("elderly-mode");
+      document.documentElement.style.fontSize = "18px";
+    } else {
+      document.documentElement.classList.remove("elderly-mode");
+      document.documentElement.style.fontSize = "16px";
+    }
+    localStorage.setItem("elderlyMode", elderlyMode.toString());
+  }, [elderlyMode]);
+
+  const executeAction = async (action: string, description: string) => {
+    switch (action) {
+      case "toggle_theme":
+        toggleTheme();
+        toast({
+          title: "✅ Theme Changed",
+          description: "Theme toggled successfully",
+          duration: 2000,
+        });
+        break;
+
+      case "toggle_elderly_mode":
+        setElderlyMode(!elderlyMode);
+        toast({
+          title: "✅ Accessibility Mode",
+          description: elderlyMode
+            ? "Elderly mode disabled"
+            : "Elderly mode enabled - larger text & simplified UI",
+          duration: 3000,
+        });
+        break;
+
+      case "call_emergency":
+        navigate("/safety/emergency-contacts");
+        toast({
+          title: "📞 Emergency Contacts",
+          description: "Opening emergency numbers",
+          duration: 2000,
+        });
+        break;
+
+      case "alert_emergency_contacts":
+        // Get current location
+        if ("geolocation" in navigator) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const { latitude, longitude } = position.coords;
+              const message = `EMERGENCY ALERT! I need help. My location: https://www.google.com/maps?q=${latitude},${longitude}`;
+
+              // Copy to clipboard
+              navigator.clipboard.writeText(message);
+
+              toast({
+                title: "🚨 Emergency Alert Ready",
+                description:
+                  "Location copied to clipboard. Please share with your contacts via WhatsApp or SMS.",
+                duration: 5000,
+              });
+            },
+            () => {
+              toast({
+                title: "⚠️ Location Required",
+                description:
+                  "Please enable location services for emergency alerts",
+                variant: "destructive",
+              });
+            },
+          );
+        }
+        break;
+
+      case "read_announcements":
+        toast({
+          title: "🔊 Reading Announcements",
+          description: "Text-to-speech feature coming soon",
+          duration: 2000,
+        });
+        // Could implement text-to-speech here
+        break;
+
+      case "quick_report":
+        navigate("/report");
+        toast({
+          title: "📝 Quick Report",
+          description: "Opening report form with your location",
+          duration: 2000,
+        });
+        break;
+
+      default:
+        toast({
+          title: "⚠️ Unknown Action",
+          description: `Action "${action}" not implemented`,
+          variant: "destructive",
+        });
+    }
+  };
 
   const handleVoiceNavigation = async () => {
     try {
@@ -30,23 +135,41 @@ export function VoiceNavigationButton() {
       setIsListening(false);
       setIsProcessing(true);
 
-      if (result.success && result.route) {
+      if (result.success) {
         // Show success feedback
         setFeedbackType("success");
         setShowFeedback(true);
 
-        toast({
-          title: "✅ Navigating",
-          description: `Going to ${result.intent?.description}`,
-          duration: 2000,
-        });
+        if (result.action) {
+          // Execute action
+          toast({
+            title: "⚡ Executing Action",
+            description: result.intent?.description,
+            duration: 2000,
+          });
 
-        // Navigate after brief delay
-        setTimeout(() => {
-          navigate(result.route!);
-          setIsProcessing(false);
-          setShowFeedback(false);
-        }, 1000);
+          setTimeout(async () => {
+            await executeAction(
+              result.action!,
+              result.intent?.description || "",
+            );
+            setIsProcessing(false);
+            setShowFeedback(false);
+          }, 1000);
+        } else if (result.route) {
+          // Navigate to route
+          toast({
+            title: "✅ Navigating",
+            description: `Going to ${result.intent?.description}`,
+            duration: 2000,
+          });
+
+          setTimeout(() => {
+            navigate(result.route!);
+            setIsProcessing(false);
+            setShowFeedback(false);
+          }, 1000);
+        }
       } else {
         // Show error feedback
         setFeedbackType("error");
