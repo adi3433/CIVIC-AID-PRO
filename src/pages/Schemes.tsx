@@ -27,9 +27,9 @@ const categories = [
 const popularSchemes = [
   {
     id: 1,
-    name: "PM Awas Yojana",
-    category: "Housing",
-    benefits: "Up to ₹2.5 Lakh subsidy",
+    name: "Pradhan Mantri Kisan Samman Nidhi (PM–KISAN)",
+    category: "Agriculture",
+    benefits: "Income support of ₹6,000/year to small & marginal farmers",
     status: "Open",
     deadline: "Mar 31, 2024",
   },
