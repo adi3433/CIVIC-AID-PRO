@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   User,
   Award,
@@ -15,6 +16,10 @@ import {
   LogOut,
   Moon,
   Sun,
+  Mail,
+  Phone,
+  Loader2,
+  Edit,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,14 +28,80 @@ import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const languages = ["English", "हिंदी", "ಕನ್ನಡ", "தமிழ்"];
 
 export default function Profile() {
+  const navigate = useNavigate();
+  const { user, profile, signOut, updateProfile } = useAuth();
+  const { toast } = useToast();
   const [elderlyMode, setElderlyMode] = useState(false);
   const [anonymousReporting, setAnonymousReporting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: profile?.full_name || "",
+    phone: profile?.phone || "",
+  });
   const { isDark, toggleTheme } = useTheme();
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed Out",
+      description: "You've been successfully signed out",
+    });
+    navigate("/login");
+  };
+
+  const handleSaveProfile = async () => {
+    setLoading(true);
+    try {
+      const { error } = await updateProfile({
+        full_name: editForm.full_name,
+        phone: editForm.phone,
+      });
+
+      if (error) {
+        toast({
+          title: "Update Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Profile Updated",
+          description: "Your profile has been updated successfully",
+        });
+        setIsEditing(false);
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    return user?.email?.slice(0, 2).toUpperCase() || "U";
+  };
 
   return (
     <div className="bg-background min-h-screen">
@@ -41,30 +112,93 @@ export default function Profile() {
       {/* User Profile Card */}
       <div className="px-4 pb-4">
         <Card variant="elevated" className="relative overflow-hidden">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mb-4">
             <Avatar className="h-16 w-16 border-3 border-primary/20">
               <AvatarFallback className="bg-primary text-primary-foreground text-xl font-bold">
-                RS
+                {getInitials()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h2 className="text-xl font-bold text-foreground">
-                Rahul Sharma
+              <h2 className="text-lg font-bold text-foreground">
+                {profile?.full_name || "User"}
               </h2>
-              <p className="text-sm text-muted-foreground">
-                rahul.sharma@email.com
-              </p>
-              <div className="flex items-center gap-2 mt-2">
-                <Badge
-                  variant="outline"
-                  className="bg-warning/10 text-warning border-warning/30"
-                >
-                  <Award className="w-3 h-3 mr-1" />
-                  Gold Citizen
-                </Badge>
+              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                <Mail className="w-3 h-3" />
+                <span>{user?.email}</span>
               </div>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setIsEditing(!isEditing);
+                setEditForm({
+                  full_name: profile?.full_name || "",
+                  phone: profile?.phone || "",
+                });
+              }}
+            >
+              <Edit className="w-4 h-4" />
+            </Button>
           </div>
+
+          {isEditing && (
+            <div className="space-y-3 mb-4">
+              <div className="space-y-2">
+                <Label htmlFor="full_name" className="text-xs">
+                  Full Name
+                </Label>
+                <Input
+                  id="full_name"
+                  value={editForm.full_name}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, full_name: e.target.value })
+                  }
+                  placeholder="Enter your full name"
+                  disabled={loading}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-xs">
+                  Phone Number
+                </Label>
+                <Input
+                  id="phone"
+                  value={editForm.phone}
+                  onChange={(e) =>
+                    setEditForm({ ...editForm, phone: e.target.value })
+                  }
+                  placeholder="Enter your phone number"
+                  disabled={loading}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={handleSaveProfile}
+                  disabled={loading}
+                  className="flex-1"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsEditing(false)}
+                  disabled={loading}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Reputation Score */}
           <div className="mt-4 pt-4 border-t border-border">
@@ -211,7 +345,10 @@ export default function Profile() {
             />
           </div>
 
-          <div className="flex items-center gap-3 py-3 last:pb-0">
+          <div
+            className="flex items-center gap-3 py-3 last:pb-0 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors px-2 -mx-2"
+            onClick={handleSignOut}
+          >
             <div className="p-2 bg-destructive/10 rounded-lg">
               <LogOut className="w-4 h-4 text-destructive" />
             </div>

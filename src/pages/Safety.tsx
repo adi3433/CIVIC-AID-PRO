@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Map,
   AlertTriangle,
@@ -12,11 +13,17 @@ import {
   Eye,
   EyeOff,
   Lightbulb,
+  Share2,
+  MapPin,
+  BookOpen,
+  CheckCircle,
+  Loader2,
 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -295,6 +302,7 @@ export default function Safety() {
     },
   );
   const [hazardSheetOpen, setHazardSheetOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Get user's current location
   useEffect(() => {
@@ -383,9 +391,7 @@ export default function Safety() {
               {loading ? (
                 <Card className="relative overflow-hidden h-80 p-0 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
                   <div className="text-center">
-                    <div className="animate-spin mb-3">
-                      <Navigation className="w-8 h-8 text-blue-400" />
-                    </div>
+                    <Loader2 className="w-8 h-8 text-blue-400 animate-spin mb-3 mx-auto" />
                     <p className="text-sm text-slate-300">
                       Getting your location...
                     </p>
@@ -604,41 +610,126 @@ export default function Safety() {
                 </div>
               </Card>
 
-              {/* Emergency Contacts */}
-              <div className="grid grid-cols-2 gap-3">
-                {emergencyContacts.map((contact) => (
-                  <Card key={contact.name} variant="interactive" size="sm">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`p-1.5 rounded-lg ${
-                          contact.color === "destructive"
-                            ? "bg-destructive/10"
-                            : contact.color === "warning"
-                              ? "bg-warning/10"
-                              : "bg-secondary/10"
-                        }`}
-                      >
-                        <PhoneCall
-                          className={`w-4 h-4 ${
-                            contact.color === "destructive"
-                              ? "text-destructive"
-                              : contact.color === "warning"
-                                ? "text-warning"
-                                : "text-secondary"
-                          }`}
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          {contact.name}
-                        </p>
-                        <p className="font-bold text-foreground">
-                          {contact.number}
-                        </p>
-                      </div>
+              {/* Emergency Features Grid */}
+              <div className="space-y-3">
+                {/* Emergency Location Sharer */}
+                <Card
+                  className="bg-card border border-border cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => {
+                    if (userLocation && navigator.share) {
+                      const message = `Emergency Alert!\n\nI need help at this location:\n\nLatitude: ${userLocation.lat.toFixed(6)}\nLongitude: ${userLocation.lng.toFixed(6)}\n\nGoogle Maps: https://www.google.com/maps?q=${userLocation.lat},${userLocation.lng}\n\nPlease contact me immediately.`;
+
+                      navigator
+                        .share({
+                          title: "Emergency Location",
+                          text: message,
+                        })
+                        .catch((error) => {
+                          console.error("Error sharing:", error);
+                          // Fallback: copy to clipboard
+                          navigator.clipboard.writeText(message);
+                          toast({
+                            title: "Location Copied",
+                            description:
+                              "Emergency location copied to clipboard",
+                          });
+                        });
+                    } else if (userLocation) {
+                      // Fallback for browsers without share API
+                      const message = `🚨 Emergency Alert!\n\nI need help at this location:\n\nLatitude: ${userLocation.lat.toFixed(6)}\nLongitude: ${userLocation.lng.toFixed(6)}\n\nGoogle Maps: https://www.google.com/maps?q=${userLocation.lat},${userLocation.lng}\n\nPlease contact me immediately.`;
+                      navigator.clipboard.writeText(message);
+                      toast({
+                        title: "Location Copied",
+                        description:
+                          "Emergency location copied to clipboard. Share it with your contacts.",
+                      });
+                    } else {
+                      toast({
+                        title: "Location Unavailable",
+                        description: "Please enable location services",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                >
+                  <div className="flex items-center gap-3 p-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      <Share2 className="w-5 h-5 text-blue-500" />
                     </div>
-                  </Card>
-                ))}
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-foreground">
+                        Emergency Location Sharer
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Share your location instantly with emergency contacts
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </Card>
+
+                {/* Safe Shelter Locator */}
+                <Card
+                  className="bg-card border border-border cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => navigate("/safety/shelter-locator")}
+                >
+                  <div className="flex items-center gap-3 p-3">
+                    <div className="p-2 rounded-lg bg-green-500/10">
+                      <MapPin className="w-5 h-5 text-green-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-foreground">
+                        Safe Shelter Locator
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Find nearest shelters, hospitals during emergencies
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </Card>
+
+                {/* Emergency Numbers Dictionary */}
+                <Card
+                  className="bg-card border border-border cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => navigate("/safety/emergency-contacts")}
+                >
+                  <div className="flex items-center gap-3 p-3">
+                    <div className="p-2 rounded-lg bg-orange-500/10">
+                      <BookOpen className="w-5 h-5 text-orange-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-foreground">
+                        Emergency Numbers
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Quick access to all emergency contact numbers
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </Card>
+
+                {/* Safety Check-in */}
+                <Card
+                  className="bg-card border border-border cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => navigate("/safety/check-in")}
+                >
+                  <div className="flex items-center gap-3 p-3">
+                    <div className="p-2 rounded-lg bg-purple-500/10">
+                      <CheckCircle className="w-5 h-5 text-purple-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-sm font-semibold text-foreground">
+                        Safety Check-in
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        Set timed check-ins with auto-alerts for safety
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </div>
+                </Card>
               </div>
             </div>
           </TabsContent>
