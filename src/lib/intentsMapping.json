@@ -447,6 +447,92 @@
       ],
       "description": "Quick report an issue with current location pre-filled",
       "examples": ["Quick report", "Report issue here", "Fast report"]
+    },
+    {
+      "id": "report_and_track",
+      "action": "report_and_track_workflow",
+      "keywords": [
+        "report and track",
+        "report and follow up",
+        "report and monitor",
+        "track this issue",
+        "report and save"
+      ],
+      "description": "Multi-step workflow: Report issue with location → Save to tracker → Set reminder to check status",
+      "examples": [
+        "Report this pothole and track it",
+        "Report and follow up",
+        "Report this and remind me to check"
+      ]
+    },
+    {
+      "id": "going_home_checkin",
+      "action": "going_home_workflow",
+      "keywords": [
+        "going home",
+        "walking home",
+        "heading home",
+        "start safety check",
+        "going home safety"
+      ],
+      "description": "Multi-step workflow: Get destination → Estimate travel time → Start safety check-in → Prepare share message",
+      "examples": [
+        "I'm going home",
+        "Walking home, start safety check",
+        "Heading home safely"
+      ]
+    },
+    {
+      "id": "pay_all_bills",
+      "action": "pay_all_bills_workflow",
+      "keywords": [
+        "pay all bills",
+        "pay all pending",
+        "pay everything",
+        "clear all bills",
+        "pay all utilities"
+      ],
+      "description": "Multi-step workflow: Check pending bills → Calculate total → Show summary → Navigate to payment",
+      "examples": [
+        "Pay all my bills",
+        "Pay all pending bills",
+        "Clear all my bills"
+      ]
+    },
+    {
+      "id": "check_eligibility",
+      "action": "check_eligibility_workflow",
+      "keywords": [
+        "check eligibility",
+        "what schemes for me",
+        "eligible schemes",
+        "schemes I qualify",
+        "check schemes"
+      ],
+      "description": "Multi-step workflow: Analyze profile → Match schemes → Show documents needed → Navigate to schemes",
+      "examples": [
+        "Check my eligibility",
+        "What schemes am I eligible for",
+        "Show schemes for me"
+      ]
+    },
+    {
+      "id": "area_updates",
+      "action": "area_updates_workflow",
+      "keywords": [
+        "area updates",
+        "updates about my area",
+        "what's happening here",
+        "local updates",
+        "area news",
+        "nearby updates"
+      ],
+      "description": "Multi-step workflow: Get location → Check announcements → Show nearby reports → Read aloud updates",
+      "examples": [
+        "Any updates about my area",
+        "What's happening in my area",
+        "Local news and updates"
+      ]
     }
   ]
 }
