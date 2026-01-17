@@ -18,6 +18,9 @@ import NotFound from "./pages/NotFound";
 import EmergencyContacts from "./pages/EmergencyContacts";
 import SafetyCheckin from "./pages/SafetyCheckin";
 import SafeShelterLocator from "./pages/SafeShelterLocator";
+import Library from "./pages/Library";
+import LocalOffices from "./pages/LocalOffices";
+import ProcessNavigator from "./pages/ProcessNavigator";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +61,15 @@ const App = () => (
                         />
                         <Route path="/schemes" element={<Schemes />} />
                         <Route path="/profile" element={<Profile />} />
+                        <Route path="/library" element={<Library />} />
+                        <Route
+                          path="/local-offices"
+                          element={<LocalOffices />}
+                        />
+                        <Route
+                          path="/process-navigator"
+                          element={<ProcessNavigator />}
+                        />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </MobileLayout>
