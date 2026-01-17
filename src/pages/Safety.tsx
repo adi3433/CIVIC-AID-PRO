@@ -6,10 +6,7 @@ import {
   Shield,
   ChevronRight,
   AlertOctagon,
-  Car,
-  PhoneCall,
   AlertCircle,
-  Navigation,
   Eye,
   EyeOff,
   Lightbulb,
@@ -18,14 +15,11 @@ import {
   BookOpen,
   CheckCircle,
   Loader2,
-  Activity,
-  TrendingUp,
 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -39,11 +33,11 @@ import {
 // Digital Safety Components
 import { DigitalSafetySection } from "@/components/digital-safety/DigitalSafetySection";
 
-// Heat Map Component
-import { HeatMapVisualization } from "@/components/HeatMapVisualization";
-
 // Heat Map Service
-import { fetchHeatmapReports, type ReportHeatmapData } from "@/lib/heatmapService";
+import {
+  fetchHeatmapReports,
+  type ReportHeatmapData,
+} from "@/lib/heatmapService";
 
 // Fix Leaflet marker icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -55,13 +49,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl:
     "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
 });
-
-const emergencyContacts = [
-  { name: "Police", number: "100", color: "destructive" },
-  { name: "Ambulance", number: "108", color: "destructive" },
-  { name: "Fire", number: "101", color: "warning" },
-  { name: "Women Helpline", number: "181", color: "secondary" },
-];
 
 // Report categories mapping to visual properties
 const REPORT_CATEGORIES = {
@@ -151,13 +138,15 @@ const ReportHeatmapCanvas = ({
           if (!visibleCategories[report.category]) return;
 
           const categoryConfig =
-            REPORT_CATEGORIES[report.category as keyof typeof REPORT_CATEGORIES];
+            REPORT_CATEGORIES[
+              report.category as keyof typeof REPORT_CATEGORIES
+            ];
           if (!categoryConfig) return;
 
           // Calculate intensity based on upvotes and duplicates
           const intensity = Math.min(
-            0.3 + (report.upvotes * 0.1) + (report.duplicate_count * 0.05),
-            1.0
+            0.3 + report.upvotes * 0.1 + report.duplicate_count * 0.05,
+            1.0,
           );
 
           L.circleMarker([report.latitude, report.longitude], {
@@ -170,9 +159,9 @@ const ReportHeatmapCanvas = ({
           })
             .bindPopup(
               `${categoryConfig.emoji} ${categoryConfig.label}<br/>` +
-              `Upvotes: ${report.upvotes}<br/>` +
-              `Status: ${report.status}<br/>` +
-              `<small>${new Date(report.created_at).toLocaleDateString()}</small>`,
+                `Upvotes: ${report.upvotes}<br/>` +
+                `Status: ${report.status}<br/>` +
+                `<small>${new Date(report.created_at).toLocaleDateString()}</small>`,
             )
             .addTo(mapInstance);
         });
@@ -213,13 +202,17 @@ const SafetyScore = ({
   visibleCategories: Record<string, boolean>;
 }) => {
   // Calculate total hazard based on visible reports
-  const visibleReports = reports.filter(r => visibleCategories[r.category]);
+  const visibleReports = reports.filter((r) => visibleCategories[r.category]);
   const totalReports = visibleReports.length;
   const totalUpvotes = visibleReports.reduce((sum, r) => sum + r.upvotes, 0);
-  const totalDuplicates = visibleReports.reduce((sum, r) => sum + r.duplicate_count, 0);
-  
+  const totalDuplicates = visibleReports.reduce(
+    (sum, r) => sum + r.duplicate_count,
+    0,
+  );
+
   // Safety score decreases with more reports, upvotes, and duplicates
-  const hazardScore = (totalReports * 2) + (totalUpvotes * 0.5) + (totalDuplicates * 0.3);
+  const hazardScore =
+    totalReports * 2 + totalUpvotes * 0.5 + totalDuplicates * 0.3;
   const safetyScore = Math.max(0, 100 - hazardScore);
   const safetyLevel =
     safetyScore >= 80
@@ -234,52 +227,56 @@ const SafetyScore = ({
 
   const safetyColor =
     safetyScore >= 80
-      ? "text-green-500 bg-green-500/10"
+      ? "bg-green-500"
       : safetyScore >= 60
-        ? "text-blue-500 bg-blue-500/10"
+        ? "bg-blue-500"
         : safetyScore >= 40
-          ? "text-yellow-500 bg-yellow-500/10"
+          ? "bg-yellow-500"
           : safetyScore >= 20
-            ? "text-orange-500 bg-orange-500/10"
-            : "text-red-500 bg-red-500/10";
+            ? "bg-orange-500"
+            : "bg-red-500";
+
+  const safetyTextColor =
+    safetyScore >= 80
+      ? "text-green-700 dark:text-green-300"
+      : safetyScore >= 60
+        ? "text-blue-700 dark:text-blue-300"
+        : safetyScore >= 40
+          ? "text-yellow-700 dark:text-yellow-300"
+          : safetyScore >= 20
+            ? "text-orange-700 dark:text-orange-300"
+            : "text-red-700 dark:text-red-300";
 
   return (
-    <div
-      className={`rounded-xl p-4 border-2 backdrop-blur-sm bg-card/95 shadow-lg ${safetyColor}`}
-    >
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-xs font-semibold opacity-70">Safety Score</p>
-          <p className="text-2xl font-bold">{Math.round(safetyScore)}/100</p>
-          <p className="text-xs mt-1 opacity-75">{safetyLevel}</p>
+    <div className="w-full bg-card/95 backdrop-blur-sm border-t-2 border-border shadow-lg">
+      <div className="flex items-center justify-between px-4 py-2">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${safetyColor}/10`}>
+            <Shield
+              className={`w-5 h-5 ${safetyColor.replace("bg-", "text-")}`}
+            />
+          </div>
+          <div>
+            <p className="text-xs font-medium text-muted-foreground">
+              Safety Score
+            </p>
+            <div className="flex items-baseline gap-2">
+              <p className={`text-xl font-bold ${safetyTextColor}`}>
+                {Math.round(safetyScore)}
+              </p>
+              <p className="text-xs text-muted-foreground">/100</p>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-muted font-medium">
+                {safetyLevel}
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="relative w-20 h-20">
-          <svg
-            className="w-full h-full transform -rotate-90"
-            viewBox="0 0 100 100"
-          >
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-              opacity="0.2"
+        <div className="flex-1 max-w-xs ml-4">
+          <div className="h-2 bg-muted rounded-full overflow-hidden">
+            <div
+              className={`h-full ${safetyColor} transition-all duration-500`}
+              style={{ width: `${safetyScore}%` }}
             />
-            <circle
-              cx="50"
-              cy="50"
-              r="45"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeDasharray={`${(safetyScore / 100) * 282.7} 282.7`}
-              className="transition-all duration-500"
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <Shield className="w-8 h-8" />
           </div>
         </div>
       </div>
@@ -295,18 +292,60 @@ export default function Safety() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const [reports, setReports] = useState<ReportHeatmapData[]>([]);
-  const [visibleCategories, setVisibleCategories] = useState<Record<string, boolean>>(
-    {
-      pothole: true,
-      garbage: true,
-      streetlight: true,
-      drainage: true,
-      water: true,
-      noise: true,
-    },
-  );
+  const [visibleCategories, setVisibleCategories] = useState<
+    Record<string, boolean>
+  >({
+    pothole: true,
+    garbage: true,
+    streetlight: true,
+    drainage: true,
+    water: true,
+    noise: true,
+  });
   const [categorySheetOpen, setCategorySheetOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Generate dummy reports for demo purposes
+  const generateDummyReports = (
+    centerLat: number,
+    centerLng: number,
+  ): ReportHeatmapData[] => {
+    const categories = Object.keys(REPORT_CATEGORIES);
+    const dummyReports: ReportHeatmapData[] = [];
+
+    // Generate 5-8 dummy reports to keep safety score moderate (50-60 range)
+    const numReports = 5 + Math.floor(Math.random() * 4);
+
+    for (let i = 0; i < numReports; i++) {
+      // Random offset within ~2km radius (approximately 0.02 degrees)
+      const latOffset = (Math.random() - 0.5) * 0.04;
+      const lngOffset = (Math.random() - 0.5) * 0.04;
+
+      const category =
+        categories[Math.floor(Math.random() * categories.length)];
+
+      // Lower upvotes (0-5) and duplicates (0-2) for moderate severity
+      const upvotes = Math.floor(Math.random() * 6);
+      const duplicate_count = Math.floor(Math.random() * 3);
+
+      dummyReports.push({
+        id: `dummy-${i}`,
+        latitude: centerLat + latOffset,
+        longitude: centerLng + lngOffset,
+        category: category,
+        status: ["reported", "in-progress", "resolved"][
+          Math.floor(Math.random() * 3)
+        ] as "reported" | "in-progress" | "resolved",
+        upvotes: upvotes,
+        duplicate_count: duplicate_count,
+        created_at: new Date(
+          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
+        ).toISOString(), // Random date within last 30 days
+      });
+    }
+
+    return dummyReports;
+  };
 
   // Get user's current location and fetch real reports
   useEffect(() => {
@@ -318,14 +357,20 @@ export default function Safety() {
 
           // Fetch real reports from database
           const result = await fetchHeatmapReports(5, latitude, longitude); // 5km radius
-          if (result.success && result.reports) {
-            setReports(result.reports);
-          }
+          const realReports =
+            result.success && result.reports ? result.reports : [];
+
+          // Generate dummy reports for demo
+          const dummyReports = generateDummyReports(latitude, longitude);
+
+          // Combine real and dummy reports
+          const allReports = [...realReports, ...dummyReports];
+          setReports(allReports);
           setLoading(false);
 
           toast({
             title: "Location Found",
-            description: `Loaded ${result.reports?.length || 0} active reports`,
+            description: `Loaded ${allReports.length} active reports`,
             duration: 2000,
           });
         },
@@ -337,14 +382,20 @@ export default function Safety() {
 
           // Fetch reports with fallback location
           const result = await fetchHeatmapReports(5, fallbackLat, fallbackLng);
-          if (result.success && result.reports) {
-            setReports(result.reports);
-          }
+          const realReports =
+            result.success && result.reports ? result.reports : [];
+
+          // Generate dummy reports for demo
+          const dummyReports = generateDummyReports(fallbackLat, fallbackLng);
+
+          // Combine real and dummy reports
+          const allReports = [...realReports, ...dummyReports];
+          setReports(allReports);
           setLoading(false);
 
           toast({
             title: "Using Fallback Location",
-            description: "Enable location for accurate data",
+            description: `Loaded ${allReports.length} active reports`,
             duration: 3000,
           });
         },
@@ -371,9 +422,8 @@ export default function Safety() {
       {/* Tab Switcher */}
       <div className="px-4 pb-4">
         <Tabs defaultValue="safety" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="safety">Safety</TabsTrigger>
-            <TabsTrigger value="heatmap">Heat Map</TabsTrigger>
             <TabsTrigger value="digital">Digital Safety</TabsTrigger>
           </TabsList>
 
@@ -433,9 +483,9 @@ export default function Safety() {
                           </p>
                         </div>
                       )}
-                      {/* Safety Score Overlay */}
+                      {/* Safety Score Bottom Bar */}
                       {!categorySheetOpen && (
-                        <div className="absolute bottom-2 right-2 z-[9999]">
+                        <div className="absolute bottom-0 left-0 right-0 z-[9999]">
                           <SafetyScore
                             reports={reports}
                             visibleCategories={visibleCategories}
@@ -480,7 +530,10 @@ export default function Safety() {
 
             {/* Category Filter Sheet */}
             {userLocation && reports.length > 0 && (
-              <Sheet open={categorySheetOpen} onOpenChange={setCategorySheetOpen}>
+              <Sheet
+                open={categorySheetOpen}
+                onOpenChange={setCategorySheetOpen}
+              >
                 <SheetContent
                   className="w-full sm:max-w-md overflow-y-auto"
                   data-category-sheet="true"
@@ -495,79 +548,86 @@ export default function Safety() {
                     </SheetDescription>
                   </SheetHeader>
                   <div className="mt-6 space-y-3">
-                    {Object.entries(REPORT_CATEGORIES).map(([key, category]) => {
-                      const categoryReports = reports.filter(r => r.category === key);
-                      const visibleCount = visibleCategories[key]
-                        ? categoryReports.length
-                        : 0;
-                      const totalUpvotes = categoryReports.reduce(
-                        (sum, r) => sum + r.upvotes,
-                        0
-                      );
-                      const avgUpvotes = categoryReports.length > 0
-                        ? (totalUpvotes / categoryReports.length).toFixed(1)
-                        : "0";
+                    {Object.entries(REPORT_CATEGORIES).map(
+                      ([key, category]) => {
+                        const categoryReports = reports.filter(
+                          (r) => r.category === key,
+                        );
+                        const visibleCount = visibleCategories[key]
+                          ? categoryReports.length
+                          : 0;
+                        const totalUpvotes = categoryReports.reduce(
+                          (sum, r) => sum + r.upvotes,
+                          0,
+                        );
+                        const avgUpvotes =
+                          categoryReports.length > 0
+                            ? (totalUpvotes / categoryReports.length).toFixed(1)
+                            : "0";
 
-                      return (
-                        <Card
-                          key={key}
-                          className="bg-card border border-border p-4"
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-2">
-                              <div
-                                className="w-4 h-4 rounded-full"
-                                style={{ backgroundColor: category.color }}
-                              />
-                              <span className="text-sm font-semibold text-foreground">
-                                {category.emoji} {category.label}
-                              </span>
-                            </div>
-                            <button
-                              onClick={() => toggleCategory(key)}
-                              className="p-1 rounded hover:bg-muted transition-colors"
-                            >
-                              {visibleCategories[key] ? (
-                                <Eye className="w-5 h-5 text-primary" />
-                              ) : (
-                                <EyeOff className="w-5 h-5 text-muted-foreground" />
-                              )}
-                            </button>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">
-                                Total Reports
-                              </span>
-                              <Badge variant="secondary">
-                                {categoryReports.length}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">
-                                Visible
-                              </span>
-                              <Badge variant="secondary">{visibleCount}</Badge>
-                            </div>
-                            <div className="flex items-center justify-between text-xs">
-                              <span className="text-muted-foreground">
-                                Avg Upvotes
-                              </span>
-                              <Badge
-                                variant="outline"
-                                style={{
-                                  backgroundColor: `${category.color}20`,
-                                  borderColor: category.color,
-                                  color: category.color,
-                                }}
+                        return (
+                          <Card
+                            key={key}
+                            className="bg-card border border-border p-4"
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <div
+                                  className="w-4 h-4 rounded-full"
+                                  style={{ backgroundColor: category.color }}
+                                />
+                                <span className="text-sm font-semibold text-foreground">
+                                  {category.emoji} {category.label}
+                                </span>
+                              </div>
+                              <button
+                                onClick={() => toggleCategory(key)}
+                                className="p-1 rounded hover:bg-muted transition-colors"
                               >
-                                {avgUpvotes}
-                              </Badge>
+                                {visibleCategories[key] ? (
+                                  <Eye className="w-5 h-5 text-primary" />
+                                ) : (
+                                  <EyeOff className="w-5 h-5 text-muted-foreground" />
+                                )}
+                              </button>
                             </div>
-                          </div>
-                        </Card>
-                      );
-                    })}
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-muted-foreground">
+                                  Total Reports
+                                </span>
+                                <Badge variant="secondary">
+                                  {categoryReports.length}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-muted-foreground">
+                                  Visible
+                                </span>
+                                <Badge variant="secondary">
+                                  {visibleCount}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-muted-foreground">
+                                  Avg Upvotes
+                                </span>
+                                <Badge
+                                  variant="outline"
+                                  style={{
+                                    backgroundColor: `${category.color}20`,
+                                    borderColor: category.color,
+                                    color: category.color,
+                                  }}
+                                >
+                                  {avgUpvotes}
+                                </Badge>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      },
+                    )}
                   </div>
                 </SheetContent>
               </Sheet>
@@ -721,124 +781,6 @@ export default function Safety() {
                 </Card>
               </div>
             </div>
-          </TabsContent>
-
-          {/* Heat Map Tab */}
-          <TabsContent value="heatmap" className="mt-4 pb-8">
-            {userLocation ? (
-              <div className="space-y-4">
-                {/* Heat Map Header */}
-                <div className="bg-gradient-to-r from-red-50 via-orange-50 to-yellow-50 dark:from-red-950/20 dark:via-orange-950/20 dark:to-yellow-950/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-                  <h2 className="text-lg font-bold text-foreground mb-2 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-red-600 dark:text-red-400" />
-                    Civic Issue Heat Map
-                  </h2>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    This real-time visualization shows the density and severity of reported civic issues in your area. 
-                    Darker red areas indicate hotspots where multiple citizens have reported the same problem, helping authorities 
-                    identify neglected zones that require immediate attention.
-                  </p>
-                </div>
-
-                {/* Key Features */}
-                <div className="grid grid-cols-1 gap-3">
-                  <Card className="p-3 bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-800">
-                    <div className="flex items-start gap-2">
-                      <CheckCircle className="w-4 h-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground">Real-Time Updates</h4>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Heat map automatically refreshes when new reports are submitted or existing ones are upvoted
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-3 bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground">Smart Clustering</h4>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Reports within 10-20 meters are automatically grouped to identify duplicate issues and problem hotspots
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <Card className="p-3 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
-                    <div className="flex items-start gap-2">
-                      <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <h4 className="text-sm font-semibold text-foreground">Priority Detection</h4>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Intensity calculated from report count, upvotes, and duplicates to highlight areas needing urgent action
-                        </p>
-                      </div>
-                    </div>
-                  </Card>
-                </div>
-
-                {/* Heat Map Visualization */}
-                <HeatMapVisualization
-                  userLat={userLocation.lat}
-                  userLng={userLocation.lng}
-                  radiusKm={50}
-                  height="500px"
-                />
-
-                {/* How to Use */}
-                <Card className="p-4 bg-muted/50">
-                  <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-primary" />
-                    How to Use This Heat Map
-                  </h4>
-                  <ul className="space-y-2 text-xs text-muted-foreground">
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">•</span>
-                      <span><strong>Heat Layer:</strong> Color intensity shows problem density - red = high concentration, yellow = lower concentration</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">•</span>
-                      <span><strong>Cluster Markers:</strong> Numbered circles show grouped reports - click for detailed breakdown</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">•</span>
-                      <span><strong>Toggle Controls:</strong> Show/hide heat layer or clusters independently for clearer visualization</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">•</span>
-                      <span><strong>Live Updates:</strong> Map refreshes automatically when new civic issues are reported nearby</span>
-                    </li>
-                  </ul>
-                </Card>
-
-                {/* For Authorities */}
-                <Card className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border-purple-200 dark:border-purple-800">
-                  <div className="flex items-start gap-3">
-                    <Shield className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h4 className="text-sm font-bold text-foreground mb-2">For Government Officials & Authorities</h4>
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        This heat map serves as a civic intelligence tool to help you identify neglected zones, prioritize resource allocation, 
-                        and respond more effectively to community needs. Dark red hotspots indicate areas with repeated complaints requiring 
-                        immediate attention, particularly in rural or underserved regions where public awareness may be low.
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-            ) : (
-              <Card className="p-6 bg-gradient-to-br from-yellow-100/50 to-orange-100/50 dark:from-yellow-900/20 dark:to-orange-900/20 border border-yellow-200 dark:border-yellow-800">
-                <div className="text-center">
-                  <AlertTriangle className="w-12 h-12 text-yellow-600 dark:text-yellow-500 mx-auto mb-3" />
-                  <h3 className="font-semibold text-foreground mb-2">Location Required</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Please enable location services to view the heat map visualization
-                  </p>
-                </div>
-              </Card>
-            )}
           </TabsContent>
 
           {/* Digital Safety Tab */}

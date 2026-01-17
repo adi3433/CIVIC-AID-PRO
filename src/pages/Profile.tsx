@@ -94,8 +94,8 @@ export default function Profile() {
   const handleSignOut = async () => {
     await signOut();
     toast({
-      title: "Signed Out",
-      description: "You've been successfully signed out",
+      title: t("profile.signedOut"),
+      description: t("profile.signedOut.desc"),
     });
     navigate("/login");
   };
@@ -110,21 +110,21 @@ export default function Profile() {
 
       if (error) {
         toast({
-          title: "Update Failed",
+          title: t("profile.updateFailed"),
           description: error.message,
           variant: "destructive",
         });
       } else {
         toast({
-          title: "Profile Updated",
-          description: "Your profile has been updated successfully",
+          title: t("profile.updateSuccess"),
+          description: t("profile.updateSuccess.desc"),
         });
         setIsEditing(false);
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update profile",
+        title: t("status.error"),
+        description: t("profile.profileUpdateFailed"),
         variant: "destructive",
       });
     } finally {
@@ -140,23 +140,25 @@ export default function Profile() {
 
       if (error) {
         toast({
-          title: "Update Failed",
+          title: t("profile.updateFailed"),
           description: error.message,
           variant: "destructive",
         });
       } else {
         setAnonymousReporting(checked);
         toast({
-          title: checked ? "Anonymous Mode Enabled" : "Anonymous Mode Disabled",
+          title: checked
+            ? t("profile.anonymousEnabled")
+            : t("profile.anonymousDisabled"),
           description: checked
-            ? "Your future reports will be submitted anonymously"
-            : "Your future reports will show your identity",
+            ? t("profile.futureReportsAnonymous")
+            : t("profile.futureReportsIdentified"),
         });
       }
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update anonymity preference",
+        title: t("status.error"),
+        description: t("profile.anonymityUpdateFailed"),
         variant: "destructive",
       });
     }
@@ -177,7 +179,9 @@ export default function Profile() {
   return (
     <div className="bg-background min-h-screen">
       <div className="px-4 pt-6 pb-4">
-        <h1 className="text-2xl font-bold text-foreground">Profile</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          {t("profile.title")}
+        </h1>
       </div>
 
       {/* User Profile Card */}
@@ -191,7 +195,7 @@ export default function Profile() {
             </Avatar>
             <div className="flex-1">
               <h2 className="text-lg font-bold text-foreground">
-                {profile?.full_name || "User"}
+                {profile?.full_name || t("profile.user")}
               </h2>
               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                 <Mail className="w-3 h-3" />
@@ -217,7 +221,7 @@ export default function Profile() {
             <div className="space-y-3 mb-4">
               <div className="space-y-2">
                 <Label htmlFor="full_name" className="text-xs">
-                  Full Name
+                  {t("profile.fullName")}
                 </Label>
                 <Input
                   id="full_name"
@@ -225,13 +229,13 @@ export default function Profile() {
                   onChange={(e) =>
                     setEditForm({ ...editForm, full_name: e.target.value })
                   }
-                  placeholder="Enter your full name"
+                  placeholder={t("profile.enterFullName")}
                   disabled={loading}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone" className="text-xs">
-                  Phone Number
+                  {t("profile.phoneNumber")}
                 </Label>
                 <Input
                   id="phone"
@@ -239,7 +243,7 @@ export default function Profile() {
                   onChange={(e) =>
                     setEditForm({ ...editForm, phone: e.target.value })
                   }
-                  placeholder="Enter your phone number"
+                  placeholder={t("profile.enterPhoneNumber")}
                   disabled={loading}
                 />
               </div>
@@ -253,10 +257,10 @@ export default function Profile() {
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-                      Saving...
+                      {t("profile.saving")}
                     </>
                   ) : (
-                    "Save Changes"
+                    t("profile.saveChanges")
                   )}
                 </Button>
                 <Button
@@ -265,7 +269,7 @@ export default function Profile() {
                   onClick={() => setIsEditing(false)}
                   disabled={loading}
                 >
-                  Cancel
+                  {t("common.cancel")}
                 </Button>
               </div>
             </div>
@@ -281,7 +285,7 @@ export default function Profile() {
       {/* Impact Dashboard */}
       <div className="px-4 pb-4">
         <h2 className="text-base font-semibold text-foreground mb-3">
-          Your Impact
+          {t("profile.impact")}
         </h2>
         <div className="grid grid-cols-2 gap-3">
           <Card variant="default" size="sm">
@@ -291,7 +295,9 @@ export default function Profile() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">45</p>
-                <p className="text-xs text-muted-foreground">Reports Filed</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("profile.reportsFiled")}
+                </p>
               </div>
             </div>
           </Card>
@@ -302,7 +308,9 @@ export default function Profile() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">38</p>
-                <p className="text-xs text-muted-foreground">Issues Resolved</p>
+                <p className="text-xs text-muted-foreground">
+                  {t("profile.issuesResolved")}
+                </p>
               </div>
             </div>
           </Card>
@@ -320,9 +328,11 @@ export default function Profile() {
               <Accessibility className="w-6 h-6 text-secondary" />
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-foreground">Elderly Mode</h3>
+              <h3 className="font-semibold text-foreground">
+                {t("profile.elderlyMode")}
+              </h3>
               <p className="text-sm text-muted-foreground">
-                Larger text, simplified UI
+                {t("profile.elderlyMode.desc")}
               </p>
             </div>
             <Switch checked={elderlyMode} onCheckedChange={setElderlyMode} />
@@ -331,11 +341,11 @@ export default function Profile() {
             <div className="mt-4 pt-4 border-t border-border/50 flex gap-3">
               <Badge variant="outline" className="bg-card">
                 <Type className="w-3 h-3 mr-1" />
-                Large Text
+                {t("profile.largeText")}
               </Badge>
               <Badge variant="outline" className="bg-card">
                 <Volume2 className="w-3 h-3 mr-1" />
-                Voice Support
+                {t("profile.voiceSupport")}
               </Badge>
             </div>
           )}
@@ -345,7 +355,7 @@ export default function Profile() {
       {/* Settings */}
       <div className="px-4 pb-8">
         <h2 className="text-base font-semibold text-foreground mb-3">
-          Settings
+          {t("profile.settings")}
         </h2>
         <Card variant="default" size="sm" className="divide-y divide-border">
           <div className="flex items-center gap-3 py-3 first:pt-0">
@@ -384,9 +394,11 @@ export default function Profile() {
               )}
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-foreground">Dark Theme</p>
+              <p className="text-sm font-medium text-foreground">
+                {t("profile.darkTheme")}
+              </p>
               <p className="text-xs text-muted-foreground">
-                {isDark ? "Enabled" : "Disabled"}
+                {isDark ? t("profile.enabled") : t("profile.disabled")}
               </p>
             </div>
             <Switch checked={isDark} onCheckedChange={toggleTheme} />
@@ -398,9 +410,11 @@ export default function Profile() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-foreground">
-                Privacy Controls
+                {t("profile.privacyControls")}
               </p>
-              <p className="text-xs text-muted-foreground">Manage your data</p>
+              <p className="text-xs text-muted-foreground">
+                {t("profile.manageData")}
+              </p>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </div>
@@ -411,12 +425,12 @@ export default function Profile() {
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-foreground">
-                Anonymous Reporting
+                {t("profile.anonymousReporting")}
               </p>
               <p className="text-xs text-muted-foreground">
                 {anonymousReporting
-                  ? "Enabled - Reports submitted as 'Anonymous'"
-                  : "Disabled - Reports show your name"}
+                  ? t("profile.anonymousReporting.enabled")
+                  : t("profile.anonymousReporting.disabled")}
               </p>
             </div>
             <Switch
@@ -433,7 +447,9 @@ export default function Profile() {
               <LogOut className="w-4 h-4 text-destructive" />
             </div>
             <div className="flex-1">
-              <p className="text-sm font-medium text-destructive">Sign Out</p>
+              <p className="text-sm font-medium text-destructive">
+                {t("profile.signOut")}
+              </p>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </div>

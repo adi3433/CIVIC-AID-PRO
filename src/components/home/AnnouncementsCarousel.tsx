@@ -1,29 +1,30 @@
 import { AlertTriangle, Gift, Info, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { useRef, useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const announcements = [
   {
     id: 1,
     type: "alert",
-    title: "Heavy Rain Alert",
-    description: "Expected flooding in low-lying areas",
+    titleKey: "announcement.heavyRain",
+    descKey: "announcement.heavyRain.desc",
     icon: AlertTriangle,
     color: "warning",
   },
   {
     id: 2,
     type: "scheme",
-    title: "PM Awas Yojana",
-    description: "New housing scheme applications open",
+    titleKey: "announcement.pmAwas",
+    descKey: "announcement.pmAwas.desc",
     icon: Gift,
     color: "success",
   },
   {
     id: 3,
     type: "info",
-    title: "Road Closure",
-    description: "MG Road closed for metro work",
+    titleKey: "announcement.roadClosure",
+    descKey: "announcement.roadClosure.desc",
     icon: Info,
     color: "info",
   },
@@ -32,6 +33,7 @@ const announcements = [
 export function AnnouncementsCarousel() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const { t } = useLanguage();
 
   const handleScroll = () => {
     if (scrollRef.current) {
@@ -45,9 +47,11 @@ export function AnnouncementsCarousel() {
   return (
     <div className="px-4 py-2">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-base font-semibold text-foreground">Announcements & Alerts</h2>
+        <h2 className="text-base font-semibold text-foreground">
+          {t("home.announcements")}
+        </h2>
         <button className="text-sm text-primary font-medium flex items-center gap-1">
-          View All <ChevronRight className="w-4 h-4" />
+          {t("home.viewAll")} <ChevronRight className="w-4 h-4" />
         </button>
       </div>
       <div
@@ -63,8 +67,8 @@ export function AnnouncementsCarousel() {
               item.color === "warning"
                 ? "bg-warning/10 border-warning/30"
                 : item.color === "success"
-                ? "bg-success/10 border-success/30"
-                : "bg-info/10 border-info/30"
+                  ? "bg-success/10 border-success/30"
+                  : "bg-info/10 border-info/30"
             }`}
           >
             <div className="flex items-start gap-3">
@@ -73,8 +77,8 @@ export function AnnouncementsCarousel() {
                   item.color === "warning"
                     ? "bg-warning/20"
                     : item.color === "success"
-                    ? "bg-success/20"
-                    : "bg-info/20"
+                      ? "bg-success/20"
+                      : "bg-info/20"
                 }`}
               >
                 <item.icon
@@ -82,15 +86,17 @@ export function AnnouncementsCarousel() {
                     item.color === "warning"
                       ? "text-warning"
                       : item.color === "success"
-                      ? "text-success"
-                      : "text-info"
+                        ? "text-success"
+                        : "text-info"
                   }`}
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-foreground">{item.title}</h3>
+                <h3 className="font-semibold text-foreground">
+                  {t(item.titleKey)}
+                </h3>
                 <p className="text-sm text-muted-foreground mt-0.5 truncate">
-                  {item.description}
+                  {t(item.descKey)}
                 </p>
               </div>
               <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
