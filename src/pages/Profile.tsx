@@ -20,6 +20,7 @@ import {
   Phone,
   Loader2,
   Edit,
+  Brain,
 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -436,6 +437,29 @@ export default function Profile() {
             <Switch
               checked={anonymousReporting}
               onCheckedChange={handleAnonymousToggle}
+            />
+          </div>
+
+          <div className="flex items-center gap-3 py-3">
+            <div className="p-2 bg-muted rounded-lg">
+              <Brain className="w-4 h-4 text-foreground" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-foreground">
+                Full Agentic Mode
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {localStorage.getItem("fullAgenticMode") === "true" ? "Autonomous Interaction Enabled" : "Standard Assistant Mode"}
+              </p>
+            </div>
+            <Switch
+              checked={localStorage.getItem("fullAgenticMode") === "true"}
+              onCheckedChange={(checked) => {
+                localStorage.setItem("fullAgenticMode", String(checked));
+                // Force re-render (hacky but works for simple localstorage toggle without context)
+                window.dispatchEvent(new Event("storage"));
+                window.location.reload(); // Simplest way to propagate changes for now
+              }}
             />
           </div>
 

@@ -285,11 +285,15 @@ export function captureVoiceInput(): Promise<string> {
 /**
  * Main voice navigation function
  */
-export async function processVoiceNavigation(): Promise<VoiceNavigationResult> {
+export async function processVoiceNavigation(transcriptInput?: string): Promise<VoiceNavigationResult> {
   try {
-    // Step 1: Capture voice input
-    console.log("🎙️ Starting voice capture...");
-    const transcript = await captureVoiceInput();
+    let transcript = transcriptInput;
+
+    if (!transcript) {
+      // Step 1: Capture voice input (if not provided)
+      console.log("🎙️ Starting voice capture...");
+      transcript = await captureVoiceInput();
+    }
 
     if (!transcript || transcript.trim().length === 0) {
       return {

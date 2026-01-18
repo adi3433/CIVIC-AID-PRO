@@ -104,11 +104,13 @@ export function ScamPhoneChecker({ onAnalysisComplete }: ScamPhoneCheckerProps) 
                     onChange={(e) => setPhone(e.target.value)}
                     className="flex-1"
                     disabled={isAnalyzing}
+                    data-agent-id="phone-check-input"
                 />
                 <Button
                     size="sm"
                     onClick={handleAnalyze}
                     disabled={isAnalyzing || !phone.trim()}
+                    data-agent-id="phone-check-btn"
                 >
                     {isAnalyzing ? (
                         <>
@@ -168,14 +170,14 @@ export function ScamPhoneChecker({ onAnalysisComplete }: ScamPhoneCheckerProps) 
                         <div className="h-3 w-full bg-gray-100 rounded-full overflow-hidden">
                             <div
                                 className={`h-full transition-all duration-500 ${result.riskScore <= 20
-                                        ? "bg-green-500"
-                                        : result.riskScore <= 40
-                                            ? "bg-green-400"
-                                            : result.riskScore <= 60
-                                                ? "bg-yellow-500"
-                                                : result.riskScore <= 80
-                                                    ? "bg-orange-500"
-                                                    : "bg-red-500"
+                                    ? "bg-green-500"
+                                    : result.riskScore <= 40
+                                        ? "bg-green-400"
+                                        : result.riskScore <= 60
+                                            ? "bg-yellow-500"
+                                            : result.riskScore <= 80
+                                                ? "bg-orange-500"
+                                                : "bg-red-500"
                                     }`}
                                 style={{ width: `${result.riskScore}%` }}
                             />
@@ -198,10 +200,10 @@ export function ScamPhoneChecker({ onAnalysisComplete }: ScamPhoneCheckerProps) 
                                     <div
                                         key={index}
                                         className={`p-2 rounded-lg text-sm border ${flag.severity === "high"
-                                                ? "bg-red-50 border-red-200 text-red-800"
-                                                : flag.severity === "medium"
-                                                    ? "bg-yellow-50 border-yellow-200 text-yellow-800"
-                                                    : "bg-blue-50 border-blue-200 text-blue-800"
+                                            ? "bg-red-50 border-red-200 text-red-800"
+                                            : flag.severity === "medium"
+                                                ? "bg-yellow-50 border-yellow-200 text-yellow-800"
+                                                : "bg-blue-50 border-blue-200 text-blue-800"
                                             }`}
                                     >
                                         {flag.description}

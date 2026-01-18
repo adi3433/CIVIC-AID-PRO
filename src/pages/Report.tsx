@@ -625,6 +625,7 @@ export default function Report() {
                 }}
                 className="w-full"
                 variant="outline"
+                data-agent-id="upload-photo-btn"
               >
                 <Camera className="w-4 h-4 mr-2" />
                 Upload Photo (Optional)
@@ -697,16 +698,15 @@ export default function Report() {
                     key={cat.id}
                     variant="interactive"
                     size="sm"
-                    className={`flex flex-col items-center gap-2 py-4 border-2 ${
-                      detectedCategory === cat.id
+                    className={`flex flex-col items-center gap-2 py-4 border-2 ${detectedCategory === cat.id
                         ? "border-primary bg-primary/5"
                         : "border-transparent"
-                    }`}
+                      }`}
                     onClick={() => setDetectedCategory(cat.id)}
+                    data-agent-id={`category-btn-${cat.id}`}
                   >
                     <div
-                      className={`p-2.5 rounded-xl ${
-                        cat.color === "primary"
+                      className={`p-2.5 rounded-xl ${cat.color === "primary"
                           ? "bg-primary/10"
                           : cat.color === "success"
                             ? "bg-success/10"
@@ -717,11 +717,10 @@ export default function Report() {
                                 : cat.color === "secondary"
                                   ? "bg-secondary/10"
                                   : "bg-destructive/10"
-                      }`}
+                        }`}
                     >
                       <cat.icon
-                        className={`w-5 h-5 ${
-                          cat.color === "primary"
+                        className={`w-5 h-5 ${cat.color === "primary"
                             ? "text-primary"
                             : cat.color === "success"
                               ? "text-success"
@@ -732,7 +731,7 @@ export default function Report() {
                                   : cat.color === "secondary"
                                     ? "text-secondary"
                                     : "text-destructive"
-                        }`}
+                          }`}
                       />
                     </div>
                     <span className="text-xs font-medium text-foreground text-center line-clamp-1">
@@ -755,6 +754,7 @@ export default function Report() {
                 onChange={(e) => setDescription(e.target.value)}
                 className="h-24"
                 placeholder="Add additional details..."
+                data-agent-id="report-description-input"
               />
               <div className="flex justify-end">
                 <Button
@@ -763,6 +763,7 @@ export default function Report() {
                   disabled={
                     submitting || !detectedCategory || !description.trim()
                   }
+                  data-agent-id="submit-report-btn"
                 >
                   {checkingDuplicates ? (
                     <>
@@ -1027,7 +1028,7 @@ export default function Report() {
             (() => {
               const status =
                 statusConfig[
-                  selectedReport.status as keyof typeof statusConfig
+                selectedReport.status as keyof typeof statusConfig
                 ];
               const StatusIcon = status.icon;
               const categoryObj = categories.find(
@@ -1054,8 +1055,7 @@ export default function Report() {
                   <DialogHeader>
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">
                       <div
-                        className={`p-2 rounded-lg ${
-                          categoryObj?.color === "primary"
+                        className={`p-2 rounded-lg ${categoryObj?.color === "primary"
                             ? "bg-primary/10"
                             : categoryObj?.color === "success"
                               ? "bg-success/10"
@@ -1066,11 +1066,10 @@ export default function Report() {
                                   : categoryObj?.color === "secondary"
                                     ? "bg-secondary/10"
                                     : "bg-destructive/10"
-                        }`}
+                          }`}
                       >
                         <CategoryIcon
-                          className={`w-5 h-5 ${
-                            categoryObj?.color === "primary"
+                          className={`w-5 h-5 ${categoryObj?.color === "primary"
                               ? "text-primary"
                               : categoryObj?.color === "success"
                                 ? "text-success"
@@ -1081,7 +1080,7 @@ export default function Report() {
                                     : categoryObj?.color === "secondary"
                                       ? "text-secondary"
                                       : "text-destructive"
-                          }`}
+                            }`}
                         />
                       </div>
                       {selectedReport.title}
@@ -1210,25 +1209,25 @@ export default function Report() {
                     {/* Location */}
                     {(selectedReport.location_name ||
                       selectedReport.latitude) && (
-                      <div className="flex items-start gap-3 text-sm bg-muted/30 p-3 rounded-lg">
-                        <MapPin className="w-4 h-4 text-primary mt-0.5" />
-                        <div className="flex-1">
-                          {selectedReport.location_name && (
-                            <p className="font-semibold text-foreground">
-                              {selectedReport.location_name}
-                            </p>
-                          )}
-                          {selectedReport.latitude &&
-                            selectedReport.longitude && (
-                              <p className="text-muted-foreground text-xs mt-0.5">
-                                Coordinates:{" "}
-                                {selectedReport.latitude.toFixed(6)},{" "}
-                                {selectedReport.longitude.toFixed(6)}
+                        <div className="flex items-start gap-3 text-sm bg-muted/30 p-3 rounded-lg">
+                          <MapPin className="w-4 h-4 text-primary mt-0.5" />
+                          <div className="flex-1">
+                            {selectedReport.location_name && (
+                              <p className="font-semibold text-foreground">
+                                {selectedReport.location_name}
                               </p>
                             )}
+                            {selectedReport.latitude &&
+                              selectedReport.longitude && (
+                                <p className="text-muted-foreground text-xs mt-0.5">
+                                  Coordinates:{" "}
+                                  {selectedReport.latitude.toFixed(6)},{" "}
+                                  {selectedReport.longitude.toFixed(6)}
+                                </p>
+                              )}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
 
                     {/* Report ID */}
                     <div className="text-xs text-muted-foreground pt-2 border-t border-border">
@@ -1299,7 +1298,7 @@ export default function Report() {
                       {/* Thumbnail */}
                       <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                         {duplicate.photo_urls &&
-                        duplicate.photo_urls.length > 0 ? (
+                          duplicate.photo_urls.length > 0 ? (
                           <img
                             src={duplicate.photo_urls[0]}
                             alt="Report"

@@ -144,7 +144,7 @@ const ReportHeatmapCanvas = ({
 
           const categoryConfig =
             REPORT_CATEGORIES[
-              report.category as keyof typeof REPORT_CATEGORIES
+            report.category as keyof typeof REPORT_CATEGORIES
             ];
           if (!categoryConfig) return;
 
@@ -164,9 +164,9 @@ const ReportHeatmapCanvas = ({
           })
             .bindPopup(
               `${categoryConfig.emoji} ${categoryConfig.label}<br/>` +
-                `Upvotes: ${report.upvotes}<br/>` +
-                `Status: ${report.status}<br/>` +
-                `<small>${new Date(report.created_at).toLocaleDateString()}</small>`,
+              `Upvotes: ${report.upvotes}<br/>` +
+              `Status: ${report.status}<br/>` +
+              `<small>${new Date(report.created_at).toLocaleDateString()}</small>`,
             )
             .addTo(mapInstance);
         });
@@ -510,8 +510,8 @@ export default function Safety() {
           })
             .bindPopup(
               `<strong>⚠️ ${latestAlert.type.replace("_", " ").toUpperCase()}</strong><br/>` +
-                `Confidence: ${(latestAlert.confidence * 100).toFixed(1)}%<br/>` +
-                `Time: ${new Date(latestAlert.alert_triggered_at).toLocaleString()}`,
+              `Confidence: ${(latestAlert.confidence * 100).toFixed(1)}%<br/>` +
+              `Time: ${new Date(latestAlert.alert_triggered_at).toLocaleString()}`,
             )
             .addTo(mapInstance)
             .openPopup();
@@ -544,9 +544,9 @@ export default function Safety() {
       <div className="px-4 pb-4">
         <Tabs defaultValue="safety" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="safety">Safety</TabsTrigger>
-            <TabsTrigger value="child">Child Safety</TabsTrigger>
-            <TabsTrigger value="digital">Digital Safety</TabsTrigger>
+            <TabsTrigger value="safety" data-agent-id="tab-safety-main">Safety</TabsTrigger>
+            <TabsTrigger value="child" data-agent-id="tab-child-safety">Child Safety</TabsTrigger>
+            <TabsTrigger value="digital" data-agent-id="tab-digital-safety">Digital Safety</TabsTrigger>
           </TabsList>
 
           {/* Safety Tab */}
@@ -770,6 +770,7 @@ export default function Safety() {
                 onMouseLeave={handleSosEnd}
                 onTouchStart={handleSosStart}
                 onTouchEnd={handleSosEnd}
+                data-agent-id="sos-emergency-btn"
               >
                 {/* Progress bar */}
                 {sosHolding && (
@@ -838,6 +839,7 @@ export default function Safety() {
                       });
                     }
                   }}
+                  data-agent-id="share-location-btn"
                 >
                   <div className="flex items-center gap-3 p-3">
                     <div className="p-2 rounded-lg bg-blue-500/10">
@@ -859,6 +861,7 @@ export default function Safety() {
                 <Card
                   className="bg-card border border-border cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => navigate("/safety/shelter-locator")}
+                  data-agent-id="shelter-locator-btn"
                 >
                   <div className="flex items-center gap-3 p-3">
                     <div className="p-2 rounded-lg bg-green-500/10">
@@ -880,6 +883,7 @@ export default function Safety() {
                 <Card
                   className="bg-card border border-border cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => navigate("/safety/emergency-contacts")}
+                  data-agent-id="emergency-numbers-btn"
                 >
                   <div className="flex items-center gap-3 p-3">
                     <div className="p-2 rounded-lg bg-orange-500/10">
@@ -901,6 +905,7 @@ export default function Safety() {
                 <Card
                   className="bg-card border border-border cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => navigate("/safety/check-in")}
+                  data-agent-id="safety-checkin-btn"
                 >
                   <div className="flex items-center gap-3 p-3">
                     <div className="p-2 rounded-lg bg-purple-500/10">

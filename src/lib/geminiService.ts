@@ -43,6 +43,7 @@ export interface AIURLAnalysis {
 // Fireworks API Configuration
 const FIREWORKS_API_URL = "https://api.fireworks.ai/inference/v1/chat/completions";
 export const DEFAULT_MODEL_ID = "accounts/fireworks/models/gpt-oss-120b";
+export const AGENT_MODEL_ID = "accounts/fireworks/models/kimi-k2-thinking";
 
 let fireworksApiKey: string | null = null;
 

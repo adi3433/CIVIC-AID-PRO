@@ -60,13 +60,12 @@ export function UtilityCard({
               <>
                 <Badge
                   variant="outline"
-                  className={`text-xs ${
-                    isOverdue
+                  className={`text-xs ${isOverdue
                       ? "bg-destructive/10 text-destructive border-destructive/30"
                       : isDue
                         ? "bg-warning/10 text-warning border-warning/30"
                         : "bg-success/10 text-success border-success/30"
-                  }`}
+                    }`}
                 >
                   {isOverdue ? "Overdue" : isDue ? "Due Now" : "Paid"}
                 </Badge>
@@ -93,6 +92,7 @@ export function UtilityCard({
               onPay(e);
             }}
             className="shrink-0"
+            data-agent-id={`pay-action-${utility.type}`}
           >
             Pay
           </Button>

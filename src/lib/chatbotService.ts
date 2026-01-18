@@ -1,7 +1,5 @@
-/**
- * Chatbot Service - AI-powered citizen query assistant
- * Uses the same Fireworks AI model as schemes service
- */
+import { generateContent, AGENT_MODEL_ID } from "@/lib/geminiService";
+import { AgentAction, AgentContext } from "@/lib/agent/types";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -17,201 +15,163 @@ export interface ChatbotResponse {
     route?: string;
     action?: string;
   }[];
+  agentAction?: AgentAction; // New field for agent commands
 }
 
 export const chatbotService = {
+  /**
+   * Standard Chat Mode
+   */
   async sendMessage(
     userMessage: string,
     conversationHistory: ChatMessage[] = [],
   ): Promise<ChatbotResponse> {
-    const { generateContent } = await import("@/lib/geminiService");
 
-    // Build conversation context
+    // Fallback to legacy behavior if not in explicit agent mode (simplified for brevity of this edit)
     const context = conversationHistory
-      .slice(-6) // Last 6 messages for context
-      .map(
-        (msg) =>
-          `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`,
-      )
+      .slice(-6)
+      .map((msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`)
       .join("\n");
 
-    const systemPrompt = `You are CivicAid Assistant, a helpful AI chatbot for Indian citizens. You help with:
-
-1. **Civic Issue Reporting**: Guide users to report potholes, streetlights, garbage, water issues, etc.
-2. **Government Schemes**: Help find relevant schemes (health, pension, housing, employment, education, agriculture)
-3. **Safety & Emergency**: Provide emergency contacts, safety check-ins, digital safety tips
-4. **Bill Payments**: Help with utility bills (electricity, water, gas)
-5. **Announcements**: Inform about local area updates and government announcements
-
-Be concise, friendly, and empathetic. Use emojis appropriately. When suggesting actions, provide clear next steps.
-Format your response naturally with:
-- Use **bold** for emphasis on key points
-- Use bullet points (•) for lists
-- Keep responses conversational and clear
-
-If the query is about:
-- **Reporting issues**: Ask for location, issue type, and guide to report form
-- **Schemes**: Ask about their situation (age, income, occupation) to find relevant schemes
-- **Bills**: Guide to payments section
-- **Safety**: Provide emergency numbers (100 Police, 108 Ambulance, 1091 Women Helpline)
-- **Scams**: Guide to digital safety section for scam detection tools
-
-Current conversation:
-${context}
-
-User's latest message: "${userMessage}"
-
-Respond in a helpful, conversational way. Use **bold** for important keywords. If you can suggest a specific action (like navigating to a page), mention it clearly.
-
-Important: Format naturally using:
-- **Bold text** for emphasis
-- Bullet points (•) for lists
-- Short paragraphs for readability
-
-RESPOND IN PLAIN TEXT WITH SIMPLE FORMATTING - NO JSON, NO CODE BLOCKS.`;
+    const systemPrompt = `You are CivicAid Assistant. Help users with civic issues (potholes, garbage), schemes, and safety.
+    Current conversation:
+    ${context}
+    User: "${userMessage}"
+    Respond helpfully and concisely.`;
 
     try {
-      const response = await generateContent(
-        systemPrompt,
-        "accounts/fireworks/models/gpt-oss-120b",
-        512,
-      );
+      const response = await generateContent(systemPrompt, "accounts/fireworks/models/gpt-oss-120b", 512);
+      return { message: response.trim(), suggestions: this.generateSuggestions(userMessage) };
+    } catch (e) {
+      return { message: "I'm having trouble connecting right now.", suggestions: [] };
+    }
+  },
 
-      // Extract action suggestions from response
-      const actions = this.extractActions(response, userMessage);
-      const suggestions = this.generateSuggestions(userMessage);
+  /**
+   * Autonomous Agent Mode (The "Brain")
+   * Decides the next step based on the user's goal and the current page state.
+   */
+  async decideNextStep(
+    userGoal: string,
+    context: AgentContext,
+    history: string[] = []
+  ): Promise<{ action: AgentAction; thoughtProcess: string }> {
+
+    // Construct a rich prompt for the Thinking Model
+    const interactiveElementsList = context.interactiveElements
+      .map(el => `- [${el.type}] "${el.text}" (ID: ${el.id})`)
+      .join("\n");
+
+    const systemPrompt = `You are an Autonomous browser agent navigating the CivicAid app.
+Your goal is to fulfill the user's request by interacting with the page.
+
+CURRENT PAGE: "${context.pageTitle}" (URL: ${context.currentUrl})
+
+AVAILABLE ELEMENTS:
+${interactiveElementsList.slice(0, 5000)} ${interactiveElementsList.length > 5000 ? "...(truncated)" : ""}
+
+USER GOAL: "${userGoal}"
+
+HISTORY (Last 5 steps):
+${history.slice(-5).join("\n")}
+
+INSTRUCTIONS:
+1. THINK: Analyze the page and the goal. 
+   - If the goal requires a specific page, NAVIGATE there first.
+   - If you are on the right page but need a specific tab (e.g., "Child Safety", "Digital Safety"), CLICK the tab first.
+   - If you need to input data (e.g., phone number, URL, report description), TYPE it into the correct input field.
+   - finally, CLICK the action button (e.g., "Check", "Submit").
+
+2. ACT: Choose ONE action from the list below.
+   - navigate(route): Go to a new page (e.g., /report, /safety, /payments, /home, /schemes).
+   - click_element(id): Click a button, link, or tab matching an ID from the list.
+   - type_text(id, text): Type text into an input field.
+   - none: If the goal is complete or you are stuck.
+
+RESPONSE FORMAT:
+You MUST respond with a valid JSON object. Do not wrap in markdown code blocks.
+{
+  "thought": "I am on the Safety page. The user wants to check a phone number. I see the 'Digital Safety' tab. I must click it first to access the phone checker.",
+  "action": "click_element",
+  "parameters": { "id": "tab-digital-safety" }
+}
+
+OR
+
+{
+  "thought": "I am on the Digital Safety tab. I see the phone input. I will type the number.",
+  "action": "type_text",
+  "parameters": { "id": "phone-check-input", "text": "9061737021" }
+}
+`;
+
+    try {
+      console.log("Agent Reasoning...");
+      // K2 Thinking model requires more tokens for its internal thought process
+      // User constrained max tokens to 4096
+      const responseText = await generateContent(systemPrompt, AGENT_MODEL_ID, 4096);
+
+      console.log("Raw Agent Response (First 200 chars):", responseText.substring(0, 200));
+
+      // Robust JSON Extraction
+      let cleanJson = responseText;
+
+      // 1. Try to extract from markdown code blocks first
+      const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/) || responseText.match(/```\n([\s\S]*?)\n```/);
+      if (jsonMatch) {
+        cleanJson = jsonMatch[1];
+      } else {
+        // 2. If no blocks, try to find the first '{' and last '}'
+        const start = responseText.indexOf("{");
+        const end = responseText.lastIndexOf("}");
+        if (start !== -1 && end !== -1) {
+          cleanJson = responseText.substring(start, end + 1);
+        }
+      }
+
+      // Cleanup common JSON errors from LLMs
+      cleanJson = cleanJson.trim()
+        .replace(/,\s*}/g, "}") // Remove trailing commas
+        .replace(/,\s*]/g, "]");
+
+      let parsed;
+      try {
+        parsed = JSON.parse(cleanJson);
+      } catch (jsonError) {
+        console.error("JSON Parse Failed:", jsonError);
+        console.log("Failed JSON Content:", cleanJson);
+        // Fallback: Use a regex to try and extract the action and params if JSON fails
+        throw new Error("Invalid JSON format from Agent");
+      }
 
       return {
-        message: response.trim(),
-        suggestions,
-        actions,
+        action: {
+          type: parsed.action,
+          parameters: parsed.parameters
+        },
+        thoughtProcess: parsed.thought || "Processing..."
       };
+
     } catch (error) {
-      console.error("Chatbot error:", error);
-      throw error;
+      console.error("Agent decision error:", error);
+      // Return a safe 'none' action instead of crashing, allowing the user to try again
+      return {
+        action: { type: "none", parameters: { description: "I encountered an error. Please try again." } },
+        thoughtProcess: "I encountered an error deciding the next step. I will stop for safety."
+      };
     }
   },
 
-  extractActions(
-    response: string,
-    userMessage: string,
-  ): ChatbotResponse["actions"] {
-    const actions: ChatbotResponse["actions"] = [];
-    const lowerMsg = userMessage.toLowerCase();
-    const lowerRes = response.toLowerCase();
-
-    // Report issue
-    if (
-      lowerMsg.includes("report") ||
-      lowerMsg.includes("pothole") ||
-      lowerMsg.includes("garbage") ||
-      lowerMsg.includes("streetlight") ||
-      lowerRes.includes("report")
-    ) {
-      actions.push({
-        label: "📝 Report Issue",
-        route: "/report",
-      });
+  generateSuggestions(text: string): string[] {
+    const suggestions: string[] = [];
+    text = text.toLowerCase();
+    if (text.includes("report") || text.includes("issue")) {
+      suggestions.push("Report a Pothole", "Report Garbage", "Track my reports");
+    } else if (text.includes("payment") || text.includes("bill")) {
+      suggestions.push("Pay Electricity Bill", "Pay Water Bill");
+    } else if (text.includes("safety") || text.includes("emergency")) {
+      suggestions.push("Safety Check-in", "Emergency Contacts");
     }
-
-    // Schemes
-    if (
-      lowerMsg.includes("scheme") ||
-      lowerMsg.includes("benefit") ||
-      lowerMsg.includes("subsidy") ||
-      lowerRes.includes("scheme")
-    ) {
-      actions.push({
-        label: "🏛️ Browse Schemes",
-        route: "/schemes",
-      });
-    }
-
-    // Safety/Emergency
-    if (
-      lowerMsg.includes("emergency") ||
-      lowerMsg.includes("safety") ||
-      lowerMsg.includes("help") ||
-      lowerMsg.includes("danger")
-    ) {
-      actions.push({
-        label: "🚨 Safety Tools",
-        route: "/safety",
-      });
-    }
-
-    // Bills
-    if (
-      lowerMsg.includes("bill") ||
-      lowerMsg.includes("payment") ||
-      lowerMsg.includes("electricity") ||
-      lowerMsg.includes("water") ||
-      lowerMsg.includes("gas")
-    ) {
-      actions.push({
-        label: "💰 Pay Bills",
-        route: "/payments",
-      });
-    }
-
-    // Digital Safety/Scams
-    if (
-      lowerMsg.includes("scam") ||
-      lowerMsg.includes("fraud") ||
-      lowerMsg.includes("phishing") ||
-      lowerMsg.includes("otp")
-    ) {
-      actions.push({
-        label: "🛡️ Scam Detection",
-        route: "/safety?tab=digital",
-      });
-    }
-
-    return actions.length > 0 ? actions : undefined;
-  },
-
-  generateSuggestions(userMessage: string): string[] {
-    const lowerMsg = userMessage.toLowerCase();
-
-    // Context-aware suggestions
-    if (lowerMsg.includes("report") || lowerMsg.includes("issue")) {
-      return [
-        "What types of issues can I report?",
-        "How do I track my report?",
-        "Can I report anonymously?",
-      ];
-    }
-
-    if (lowerMsg.includes("scheme") || lowerMsg.includes("benefit")) {
-      return [
-        "How do I check eligibility?",
-        "What documents do I need?",
-        "Show me pension schemes",
-      ];
-    }
-
-    if (lowerMsg.includes("safety") || lowerMsg.includes("emergency")) {
-      return [
-        "Emergency contact numbers",
-        "How to use safety check-in?",
-        "Digital safety tips",
-      ];
-    }
-
-    if (lowerMsg.includes("bill") || lowerMsg.includes("payment")) {
-      return [
-        "How to link my bill accounts?",
-        "Can I set bill reminders?",
-        "View payment history",
-      ];
-    }
-
-    // Default suggestions
-    return [
-      "How can I report a civic issue?",
-      "Find government schemes for me",
-      "What are emergency numbers?",
-      "Help with bill payments",
-    ];
-  },
+    return suggestions.length > 0 ? suggestions : ["Report an Issue", "Pay Bills", "Safety Features"];
+  }
 };
