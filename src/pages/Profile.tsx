@@ -354,7 +354,7 @@ export default function Profile() {
       </div>
 
       {/* Settings */}
-      <div className="px-4 pb-8">
+      <div className="px-4 pb-40">
         <h2 className="text-base font-semibold text-foreground mb-3">
           {t("profile.settings")}
         </h2>
@@ -449,7 +449,9 @@ export default function Profile() {
                 Full Agentic Mode
               </p>
               <p className="text-xs text-muted-foreground">
-                {localStorage.getItem("fullAgenticMode") === "true" ? "Autonomous Interaction Enabled" : "Standard Assistant Mode"}
+                {localStorage.getItem("fullAgenticMode") === "true"
+                  ? "Autonomous Interaction Enabled"
+                  : "Standard Assistant Mode"}
               </p>
             </div>
             <Switch

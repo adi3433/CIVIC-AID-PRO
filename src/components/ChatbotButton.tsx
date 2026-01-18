@@ -105,7 +105,7 @@ export function ChatbotButton() {
 
       if (isFullAgentic) {
         // In Full Agentic Mode, we treat this as a task request
-        // Since ChatbotButton doesn't have the full loop logic like VoiceButton yet, 
+        // Since ChatbotButton doesn't have the full loop logic like VoiceButton yet,
         // we will implement a simplified single-step version or hint the user to use voice for now.
         // BETTER: We should expose the runAgentLoop logic to be reusable.
         // For this specific request, I will adhere to the "switch to full agentic mode" instruction
@@ -114,26 +114,31 @@ export function ChatbotButton() {
         const context = {
           currentUrl: window.location.pathname,
           pageTitle: document.title,
-          interactiveElements: [] // NOTE: Chatbot doesn't scan page by default, we might need to add that.
+          interactiveElements: [], // NOTE: Chatbot doesn't scan page by default, we might need to add that.
         };
 
         // For now, let's keep it simple: explicitly mention Agent is thinking
         const assistantMessage: ChatMessage = {
           role: "assistant",
-          content: "🧠 **Agent Mode Active:** I am analyzing your request with advanced reasoning...",
+          content:
+            "🧠 **Agent Mode Active:** I am analyzing your request with advanced reasoning...",
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, assistantMessage]);
 
         // We'll delegate to the same intent matcher as a fallback for now because
-        // replicating the full "Agent Loop" (scan -> think -> act) inside this Chatbot component 
+        // replicating the full "Agent Loop" (scan -> think -> act) inside this Chatbot component
         // is complex without refactoring the loop into a shared hook.
         // BUT the user asked for "things go entirely automatic through chain of thoughts".
         // Use the existing intent match but pretend it's agentic? No, that's fake.
 
         // Real solution: If full agentic, we should try to use the K2 model to answer.
         // Since we can't easily "act" on the page from here without the loop, let's just use K2 for the CHAT response.
-        const response = await chatbotService.decideNextStep(messageToSend, { currentUrl: "chat", pageTitle: "chat", interactiveElements: [] }, []);
+        const response = await chatbotService.decideNextStep(
+          messageToSend,
+          { currentUrl: "chat", pageTitle: "chat", interactiveElements: [] },
+          [],
+        );
 
         const thoughtMsg: ChatMessage = {
           role: "assistant",
@@ -245,7 +250,7 @@ export function ChatbotButton() {
       {/* Chatbot Button */}
       <Button
         onClick={handleChatbotClick}
-        className="fixed bottom-[168px] right-4 z-50 h-14 w-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300"
+        className="fixed bottom-24 right-6 z-50 h-14 w-14 rounded-full bg-primary hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300"
         size="icon"
         aria-label="Open Chatbot"
       >
@@ -330,10 +335,11 @@ export function ChatbotButton() {
                       className={`flex-1 max-w-[80%] ${msg.role === "user" ? "ml-auto" : ""}`}
                     >
                       <div
-                        className={`rounded-lg p-3 ${msg.role === "user"
-                          ? "bg-primary text-primary-foreground rounded-tr-none"
-                          : "bg-muted rounded-tl-none"
-                          }`}
+                        className={`rounded-lg p-3 ${
+                          msg.role === "user"
+                            ? "bg-primary text-primary-foreground rounded-tr-none"
+                            : "bg-muted rounded-tl-none"
+                        }`}
                       >
                         <div className="text-sm whitespace-pre-wrap">
                           {formatMarkdown(msg.content)}
