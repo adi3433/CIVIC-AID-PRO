@@ -1,0 +1,44 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" fill="#10b981" rx="64"/>
+  
+  <!-- Building/City Icon -->
+  <g transform="translate(106, 106)">
+    <!-- Main building -->
+    <rect x="40" y="80" width="120" height="220" fill="white" opacity="0.95"/>
+    <rect x="50" y="100" width="25" height="25" fill="#10b981"/>
+    <rect x="85" y="100" width="25" height="25" fill="#10b981"/>
+    <rect x="125" y="100" width="25" height="25" fill="#10b981"/>
+    <rect x="50" y="135" width="25" height="25" fill="#10b981"/>
+    <rect x="85" y="135" width="25" height="25" fill="#10b981"/>
+    <rect x="125" y="135" width="25" height="25" fill="#10b981"/>
+    <rect x="50" y="170" width="25" height="25" fill="#10b981"/>
+    <rect x="85" y="170" width="25" height="25" fill="#10b981"/>
+    <rect x="125" y="170" width="25" height="25" fill="#10b981"/>
+    <rect x="50" y="205" width="25" height="25" fill="#10b981"/>
+    <rect x="85" y="205" width="25" height="25" fill="#10b981"/>
+    <rect x="125" y="205" width="25" height="25" fill="#10b981"/>
+    <rect x="70" y="245" width="60" height="55" fill="#10b981"/>
+    
+    <!-- Left building -->
+    <rect x="0" y="140" width="35" height="160" fill="white" opacity="0.9"/>
+    <rect x="5" y="150" width="10" height="10" fill="#10b981"/>
+    <rect x="20" y="150" width="10" height="10" fill="#10b981"/>
+    <rect x="5" y="170" width="10" height="10" fill="#10b981"/>
+    <rect x="20" y="170" width="10" height="10" fill="#10b981"/>
+    <rect x="5" y="190" width="10" height="10" fill="#10b981"/>
+    <rect x="20" y="190" width="10" height="10" fill="#10b981"/>
+    
+    <!-- Right building -->
+    <rect x="165" y="120" width="35" height="180" fill="white" opacity="0.9"/>
+    <rect x="170" y="130" width="10" height="10" fill="#10b981"/>
+    <rect x="185" y="130" width="10" height="10" fill="#10b981"/>
+    <rect x="170" y="150" width="10" height="10" fill="#10b981"/>
+    <rect x="185" y="150" width="10" height="10" fill="#10b981"/>
+    <rect x="170" y="170" width="10" height="10" fill="#10b981"/>
+    <rect x="185" y="170" width="10" height="10" fill="#10b981"/>
+  </g>
+  
+  <!-- Letter C -->
+  <text x="256" y="420" font-family="Arial, sans-serif" font-size="180" font-weight="bold" fill="white" text-anchor="middle">C</text>
+</svg>
