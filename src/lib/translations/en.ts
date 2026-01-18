@@ -24,11 +24,20 @@ export default {
   "home.greeting.morning": "Good Morning",
   "home.greeting.afternoon": "Good Afternoon",
   "home.greeting.evening": "Good Evening",
-  "home.announcements": "Announcements",
+  "home.announcements": "Announcements & Alerts",
+  "home.viewAll": "View All",
   "home.quickActions": "Quick Actions",
   "home.areaHealth": "Area Health",
   "home.communityHighlights": "Community Highlights",
   "home.citizenResources": "Citizen Resources",
+
+  // Announcements
+  "announcement.heavyRain": "Heavy Rain Alert",
+  "announcement.heavyRain.desc": "Expect heavy rainfall in your area today",
+  "announcement.pmAwas": "PM Awas Yojana Open",
+  "announcement.pmAwas.desc": "Apply for housing scheme benefits",
+  "announcement.roadClosure": "Road Closure Notice",
+  "announcement.roadClosure.desc": "MG Road closed for maintenance",
 
   // Quick Actions
   "quickActions.reportIssue": "Report Issue",
@@ -37,6 +46,14 @@ export default {
   "quickActions.payBills": "Pay Bills",
   "quickActions.emergency": "Emergency",
   "quickActions.documents": "Documents",
+  "quickActions.infrastructure": "Infrastructure",
+  "quickActions.infrastructure.desc": "Report potholes & roads",
+  "quickActions.payments": "Payments",
+  "quickActions.payments.desc": "Pay bills & taxes",
+  "quickActions.safetyHazards": "Safety Hazards",
+  "quickActions.safetyHazards.desc": "Report safety concerns",
+  "quickActions.scamAlerts": "Scam Alerts",
+  "quickActions.scamAlerts.desc": "Digital safety reports",
 
   // Citizen Resources
   "resources.library": "Information Library",
