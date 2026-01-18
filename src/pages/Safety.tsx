@@ -15,6 +15,8 @@ import {
   BookOpen,
   CheckCircle,
   Loader2,
+  Baby,
+  Clock,
 } from "lucide-react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -38,6 +40,9 @@ import {
   fetchHeatmapReports,
   type ReportHeatmapData,
 } from "@/lib/heatmapService";
+
+// Alert Service
+import { getLatestAlert, type Alert } from "@/lib/alertService";
 
 // Fix Leaflet marker icon issue
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -308,6 +313,9 @@ export default function Safety() {
   const sosTimerRef = useRef<NodeJS.Timeout | null>(null);
   const sosProgressRef = useRef<NodeJS.Timeout | null>(null);
   const navigate = useNavigate();
+  const [latestAlert, setLatestAlert] = useState<Alert | null>(null);
+  const [loadingAlert, setLoadingAlert] = useState(false);
+  const alertMapRef = useRef<any>(null);
 
   // Generate dummy reports for demo purposes
   const generateDummyReports = (
@@ -450,6 +458,79 @@ export default function Safety() {
     setSosHoldProgress(0);
   };
 
+  // Fetch latest alert for child safety
+  useEffect(() => {
+    const fetchAlert = async () => {
+      setLoadingAlert(true);
+      const result = await getLatestAlert();
+      if (result.success && result.alert) {
+        setLatestAlert(result.alert);
+      }
+      setLoadingAlert(false);
+    };
+
+    fetchAlert();
+    // Poll for updates every 30 seconds
+    const interval = setInterval(fetchAlert, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Initialize alert map
+  useEffect(() => {
+    if (latestAlert && latestAlert.latitude && latestAlert.longitude) {
+      const mapId = "alert-map-container";
+      const container = document.getElementById(mapId);
+
+      if (
+        container &&
+        !alertMapRef.current &&
+        !container.closest('[role="dialog"]')
+      ) {
+        try {
+          const mapInstance = L.map(mapId).setView(
+            [latestAlert.latitude, latestAlert.longitude],
+            15,
+          );
+
+          L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+            attribution: "&copy; OpenStreetMap contributors",
+            maxZoom: 19,
+          }).addTo(mapInstance);
+
+          // Alert marker
+          const alertIcon = L.divIcon({
+            className: "custom-alert-marker",
+            html: '<div style="background-color: #ef4444; width: 24px; height: 24px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 8px rgba(239, 68, 68, 0.6);"></div>',
+            iconSize: [24, 24],
+            iconAnchor: [12, 12],
+          });
+
+          L.marker([latestAlert.latitude, latestAlert.longitude], {
+            icon: alertIcon,
+          })
+            .bindPopup(
+              `<strong>⚠️ ${latestAlert.type.replace("_", " ").toUpperCase()}</strong><br/>` +
+                `Confidence: ${(latestAlert.confidence * 100).toFixed(1)}%<br/>` +
+                `Time: ${new Date(latestAlert.alert_triggered_at).toLocaleString()}`,
+            )
+            .addTo(mapInstance)
+            .openPopup();
+
+          alertMapRef.current = mapInstance;
+        } catch (error) {
+          console.error("Error initializing alert map:", error);
+        }
+      }
+    }
+
+    return () => {
+      if (alertMapRef.current) {
+        alertMapRef.current.remove();
+        alertMapRef.current = null;
+      }
+    };
+  }, [latestAlert]);
+
   return (
     <div className="bg-background min-h-screen">
       <div className="px-4 pt-6 pb-4">
@@ -462,8 +543,9 @@ export default function Safety() {
       {/* Tab Switcher */}
       <div className="px-4 pb-4">
         <Tabs defaultValue="safety" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="safety">Safety</TabsTrigger>
+            <TabsTrigger value="child">Child Safety</TabsTrigger>
             <TabsTrigger value="digital">Digital Safety</TabsTrigger>
           </TabsList>
 
@@ -836,6 +918,182 @@ export default function Safety() {
                   </div>
                 </Card>
               </div>
+            </div>
+          </TabsContent>
+
+          {/* Child Safety Tab */}
+          <TabsContent value="child" className="mt-4 pb-8">
+            <div className="space-y-4">
+              {/* Latest Alert */}
+              {loadingAlert ? (
+                <Card className="p-8 flex flex-col items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    Loading latest alert...
+                  </p>
+                </Card>
+              ) : latestAlert ? (
+                <>
+                  {/* Alert Warning Banner */}
+                  <Card className="bg-red-500/10 border-2 border-red-500/50">
+                    <div className="flex items-start gap-3 p-4">
+                      <AlertOctagon className="w-6 h-6 text-red-500 flex-shrink-0 mt-1 animate-pulse" />
+                      <div className="flex-1">
+                        <h3 className="font-bold text-red-700 dark:text-red-400 text-lg mb-1">
+                          ⚠️ WARNING:{" "}
+                          {latestAlert.type.replace("_", " ").toUpperCase()}{" "}
+                          DETECTED
+                        </h3>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-red-600 dark:text-red-400" />
+                            <span className="text-red-700 dark:text-red-300">
+                              Alert triggered:{" "}
+                              {new Date(
+                                latestAlert.alert_triggered_at,
+                              ).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Shield className="w-4 h-4 text-red-600 dark:text-red-400" />
+                            <span className="text-red-700 dark:text-red-300">
+                              Confidence:{" "}
+                              {(latestAlert.confidence * 100).toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Alert Location Map */}
+                  {latestAlert.latitude && latestAlert.longitude ? (
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-red-500" />
+                          Alert Location
+                        </h3>
+                        <Badge variant="destructive" className="animate-pulse">
+                          Active Alert
+                        </Badge>
+                      </div>
+                      <div
+                        id="alert-map-container"
+                        data-alert-map="true"
+                        style={{
+                          width: "100%",
+                          height: "300px",
+                        }}
+                        className="rounded-lg overflow-hidden border border-border"
+                      />
+                      <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                        <div className="text-xs space-y-1">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Latitude:
+                            </span>
+                            <span className="font-mono font-semibold">
+                              {latestAlert.latitude.toFixed(6)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">
+                              Longitude:
+                            </span>
+                            <span className="font-mono font-semibold">
+                              {latestAlert.longitude.toFixed(6)}
+                            </span>
+                          </div>
+                          {latestAlert.address && (
+                            <div className="flex justify-between items-start mt-2 pt-2 border-t border-border">
+                              <span className="text-muted-foreground">
+                                Address:
+                              </span>
+                              <span className="text-right ml-2 font-medium">
+                                {latestAlert.address}
+                              </span>
+                            </div>
+                          )}
+                          {latestAlert.location_accuracy && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">
+                                Accuracy:
+                              </span>
+                              <span className="font-medium">
+                                ±{latestAlert.location_accuracy.toFixed(1)}m
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ) : (
+                    <Card className="p-6 text-center">
+                      <AlertTriangle className="w-8 h-8 text-yellow-500 mx-auto mb-2" />
+                      <p className="text-sm text-muted-foreground">
+                        Location data not available for this alert
+                      </p>
+                    </Card>
+                  )}
+
+                  {/* Alert Details */}
+                  <Card className="p-4">
+                    <h3 className="text-sm font-semibold text-foreground mb-3">
+                      Alert Details
+                    </h3>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center py-2 border-b border-border">
+                        <span className="text-sm text-muted-foreground">
+                          Alert ID
+                        </span>
+                        <span className="text-xs font-mono text-foreground">
+                          {latestAlert.id.slice(0, 8)}...
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-border">
+                        <span className="text-sm text-muted-foreground">
+                          Type
+                        </span>
+                        <Badge variant="destructive">
+                          {latestAlert.type.replace("_", " ")}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between items-center py-2 border-b border-border">
+                        <span className="text-sm text-muted-foreground">
+                          Timestamp
+                        </span>
+                        <span className="text-sm font-medium text-foreground">
+                          {new Date(latestAlert.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                      {latestAlert.device_info && (
+                        <div className="flex justify-between items-center py-2">
+                          <span className="text-sm text-muted-foreground">
+                            Device
+                          </span>
+                          <span className="text-xs text-foreground">
+                            {latestAlert.device_info}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </>
+              ) : (
+                <Card className="p-8 text-center">
+                  <CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                  <h3 className="font-semibold text-foreground mb-2">
+                    All Clear
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    No recent child safety alerts detected
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    System is actively monitoring for incidents
+                  </p>
+                </Card>
+              )}
             </div>
           </TabsContent>
 
