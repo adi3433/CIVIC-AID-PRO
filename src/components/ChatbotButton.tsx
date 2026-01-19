@@ -77,6 +77,16 @@ export function ChatbotButton() {
     scrollToBottom();
   }, [messages]);
 
+  // AUTO-CLOSE: When Agent Mode starts (voice or text), close the chat window
+  // so it doesn't obstruct the agent's view/navigation.
+  useEffect(() => {
+    const handleAgentStart = () => {
+      setIsOpen(false);
+    };
+    window.addEventListener("agent:mode-start", handleAgentStart);
+    return () => window.removeEventListener("agent:mode-start", handleAgentStart);
+  }, []);
+
   const handleChatbotClick = () => {
     setIsOpen(true);
   };
@@ -340,8 +350,8 @@ export function ChatbotButton() {
                     >
                       <div
                         className={`rounded-lg p-3 ${msg.role === "user"
-                            ? "bg-primary text-primary-foreground rounded-tr-none"
-                            : "bg-muted rounded-tl-none"
+                          ? "bg-primary text-primary-foreground rounded-tr-none"
+                          : "bg-muted rounded-tl-none"
                           }`}
                       >
                         <div className="text-sm whitespace-pre-wrap">

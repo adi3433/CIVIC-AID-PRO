@@ -17,12 +17,23 @@ import { scanPage } from "@/lib/agent/pageScanner";
 import { executeAction } from "@/lib/agent/agentExecutor";
 import { AgentContext } from "@/lib/agent/types";
 import { dispatchAgentModeStart } from "@/components/agent";
+import { useLanguage } from "@/contexts/LanguageContext";
+
+// Map app language codes to BCP-47 speech recognition codes
+const STT_LANG_MAP: Record<string, string> = {
+  en: "en-IN",
+  hi: "hi-IN",
+  ml: "ml-IN",
+  ta: "ta-IN",
+  kn: "kn-IN",
+};
 
 export function VoiceNavigationButton() {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
   const { toggleTheme } = useTheme();
+  const { language } = useLanguage(); // Get current app language
   const [isListening, setIsListening] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [agentStatus, setAgentStatus] = useState<string | null>(null);
@@ -230,9 +241,13 @@ export function VoiceNavigationButton() {
 
       recognition.continuous = false;
       recognition.interimResults = false;
-      recognition.lang = "en-IN"; // India English
 
       recognition.onstart = () => {
+        // Dynamic language setting based on app context
+        // Default to Indian English if mapping not found
+        recognition.lang = STT_LANG_MAP[language] || "en-IN";
+        console.log(`🎙️ Listening for: ${recognition.lang}`);
+
         setIsListening(true);
         setAgentStatus("Listening...");
       };

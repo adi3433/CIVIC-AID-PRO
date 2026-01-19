@@ -21,7 +21,7 @@ export interface ChatbotResponse {
 }
 
 // Optimized element rendering for prompts
-const MAX_ELEMENTS = 50;
+const MAX_ELEMENTS = 100;
 const MAX_TEXT_LENGTH = 40;
 
 function formatElementsForPrompt(elements: { id: string; type: string; text: string }[]): string {
@@ -101,6 +101,12 @@ export const chatbotService = {
 Your goal: Fulfill the user's request by selecting the correct UI action.
 
 === STRATEGIC REASONING (Complete ALL steps before acting) ===
+
+GOAL 0 - LANGUAGE & INTENT:
+• The user may speak in English, Hindi, Malayalam, Tamil, or Kannada (or mixed "Manglish/Hinglish").
+• TRANSLATE the request to English internally.
+• Example: "Enikku vazhi theriyilla" -> "I don't know the way" -> Navigate/Search.
+• Example: "Pothole report cheyyanam" -> "Want to report pothole".
 
 STEP 1 - GOAL ANALYSIS:
 • What is the user trying to accomplish?
