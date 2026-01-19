@@ -24,7 +24,7 @@ export function AddUtilityModal({ onAdd, trigger }: AddUtilityModalProps) {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 {trigger || (
-                    <Button variant="ghost" size="sm" className="text-primary p-0 h-auto font-normal">
+                    <Button variant="ghost" size="sm" className="text-primary p-0 h-auto font-normal" data-agent-id="add-utility-trigger-btn">
                         <Plus className="w-4 h-4 mr-1" /> Add New
                     </Button>
                 )}
@@ -41,16 +41,16 @@ export function AddUtilityModal({ onAdd, trigger }: AddUtilityModalProps) {
                         <Label htmlFor="provider" className="text-right">
                             Provider
                         </Label>
-                        <Input id="provider" placeholder="e.g. Tata Power" className="col-span-3" required />
+                        <Input id="provider" placeholder="e.g. Tata Power" className="col-span-3" required data-agent-id="add-utility-provider-input" />
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="consumer" className="text-right">
                             Consumer ID
                         </Label>
-                        <Input id="consumer" placeholder="e.g. 102938475" className="col-span-3" required />
+                        <Input id="consumer" placeholder="e.g. 102938475" className="col-span-3" required data-agent-id="add-utility-account-input" />
                     </div>
                     <DialogFooter>
-                        <Button type="submit">Add Utility</Button>
+                        <Button type="submit" data-agent-id="add-utility-save-btn">Add Utility</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

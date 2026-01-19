@@ -52,35 +52,40 @@ export default function EmergencyContacts() {
       <div className="px-4 py-6">
         <div className="grid grid-cols-2 gap-3">
           {emergencyContacts.map((contact) => (
-            <Card key={contact.name} variant="interactive" size="sm">
-              <div className="flex items-center gap-2">
-                <div
-                  className={`p-1.5 rounded-lg ${
-                    contact.color === "destructive"
-                      ? "bg-destructive/10"
-                      : contact.color === "warning"
-                        ? "bg-warning/10"
-                        : "bg-secondary/10"
-                  }`}
-                >
-                  <PhoneCall
-                    className={`w-4 h-4 ${
-                      contact.color === "destructive"
-                        ? "text-destructive"
+            <a
+              key={contact.name}
+              href={`tel:${contact.number}`}
+              className="block"
+              data-agent-id={`emergency-call-${contact.name.toLowerCase().replace(/\s+/g, '-')}`}
+            >
+              <Card variant="interactive" size="sm" className="h-full">
+                <div className="flex items-center gap-2">
+                  <div
+                    className={`p-1.5 rounded-lg ${contact.color === "destructive"
+                        ? "bg-destructive/10"
                         : contact.color === "warning"
-                          ? "text-warning"
-                          : "text-secondary"
-                    }`}
-                  />
+                          ? "bg-warning/10"
+                          : "bg-secondary/10"
+                      }`}
+                  >
+                    <PhoneCall
+                      className={`w-4 h-4 ${contact.color === "destructive"
+                          ? "text-destructive"
+                          : contact.color === "warning"
+                            ? "text-warning"
+                            : "text-secondary"
+                        }`}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      {contact.name}
+                    </p>
+                    <p className="font-bold text-foreground">{contact.number}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">
-                    {contact.name}
-                  </p>
-                  <p className="font-bold text-foreground">{contact.number}</p>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            </a>
           ))}
         </div>
       </div>

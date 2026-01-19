@@ -69,6 +69,87 @@ export async function generateContent(prompt: string, model: string = DEFAULT_MO
 }
 
 /**
+ * Generate agent decision with LOW temperature for deterministic output
+ * Optimized for action selection accuracy over creativity
+ */
+export async function generateAgentDecision(
+    prompt: string,
+    model: string = AGENT_MODEL_ID,
+    maxTokens: number = 4096
+): Promise<string> {
+    return callFireworksAPIWithConfig(
+        [{ role: "user", content: prompt }],
+        model,
+        maxTokens,
+        {
+            temperature: 0.3,    // Slightly increased for broader reasoning
+            top_p: 0.9,
+            top_k: 20,           // Tighter token selection
+            presence_penalty: 0,
+            frequency_penalty: 0,
+        }
+    );
+}
+
+/**
+ * Call Fireworks API with custom config
+ */
+async function callFireworksAPIWithConfig(
+    messages: { role: string; content: string }[],
+    model: string,
+    maxTokens: number,
+    config: {
+        temperature: number;
+        top_p: number;
+        top_k: number;
+        presence_penalty: number;
+        frequency_penalty: number;
+    }
+): Promise<string> {
+    if (!fireworksApiKey) {
+        const envKey = import.meta.env.VITE_FIREWORKS_API_KEY;
+        if (envKey) {
+            console.log("🔄 Auto-initializing Fireworks AI from environment...");
+            fireworksApiKey = envKey;
+        } else {
+            console.error("❌ Fireworks API Key is MISSING");
+            throw new Error("Fireworks API not initialized");
+        }
+    }
+
+    console.log(`🤖 Agent Decision Request (${model}) [temp: ${config.temperature}]...`);
+
+    try {
+        const response = await fetch(FIREWORKS_API_URL, {
+            method: "POST",
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${fireworksApiKey}`
+            },
+            body: JSON.stringify({
+                model,
+                max_tokens: maxTokens,
+                ...config,
+                messages
+            })
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ API Error: ${response.status}`, errorText);
+            throw new Error(`Fireworks API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.choices[0]?.message?.content || "";
+    } catch (error) {
+        console.error("❌ Agent Decision Error:", error);
+        throw error;
+    }
+}
+
+/**
  * Call Fireworks API
  */
 async function callFireworksAPI(messages: { role: string; content: string }[], model: string = DEFAULT_MODEL_ID, maxTokens: number = 4096): Promise<string> {

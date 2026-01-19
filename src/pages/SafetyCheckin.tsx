@@ -290,6 +290,7 @@ export default function SafetyCheckin() {
                       setCustomDuration("");
                     }}
                     className="text-xs"
+                    data-agent-id={`checkin-duration-${preset.minutes}`}
                   >
                     {preset.label}
                   </Button>
@@ -314,6 +315,7 @@ export default function SafetyCheckin() {
                     min="1"
                     max="480"
                     className="h-9 text-sm"
+                    data-agent-id="checkin-custom-duration"
                   />
                   <span className="text-xs text-muted-foreground whitespace-nowrap">
                     minutes
@@ -334,6 +336,7 @@ export default function SafetyCheckin() {
                     size="sm"
                     onClick={addContact}
                     className="h-7 text-xs"
+                    data-agent-id="checkin-add-contact-btn"
                   >
                     + Add
                   </Button>
@@ -395,6 +398,7 @@ export default function SafetyCheckin() {
               onClick={handleStartCheckin}
               className="w-full bg-purple-500 hover:bg-purple-600"
               size="lg"
+              data-agent-id="start-checkin-btn"
             >
               <CheckCircle className="w-5 h-5 mr-2" />
               Start Check-in ({customDuration || selectedDuration} min)
@@ -472,6 +476,7 @@ export default function SafetyCheckin() {
                 onClick={handleConfirmSafe}
                 className="w-full bg-green-500 hover:bg-green-600"
                 size="lg"
+                data-agent-id="confirm-safe-btn"
               >
                 <CheckCircle className="w-5 h-5 mr-2" />
                 I've Reached Safely
@@ -481,6 +486,7 @@ export default function SafetyCheckin() {
                 variant="outline"
                 className="w-full"
                 size="lg"
+                data-agent-id="cancel-checkin-btn"
               >
                 Cancel Check-in
               </Button>

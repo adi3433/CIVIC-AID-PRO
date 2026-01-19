@@ -39,6 +39,7 @@ export interface PageElement {
     interactable: boolean;
     role?: string;
     value?: string;
+    priority?: number; // NEW: Priority score for sorting (data-agent-id=100, id=80, aria=60, text=40)
 }
 
 export interface AgentContext {

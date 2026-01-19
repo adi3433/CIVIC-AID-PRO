@@ -66,22 +66,22 @@ export function QuickActions() {
             <div className="flex flex-col items-center text-center gap-2">
               <div
                 className={`p-3 rounded-xl transition-transform group-hover:scale-110 ${action.color === "primary"
-                    ? "bg-primary/10"
-                    : action.color === "success"
-                      ? "bg-success/10"
-                      : action.color === "warning"
-                        ? "bg-warning/10"
-                        : "bg-destructive/10"
+                  ? "bg-primary/10"
+                  : action.color === "success"
+                    ? "bg-success/10"
+                    : action.color === "warning"
+                      ? "bg-warning/10"
+                      : "bg-destructive/10"
                   }`}
               >
                 <action.icon
                   className={`w-6 h-6 ${action.color === "primary"
-                      ? "text-primary"
-                      : action.color === "success"
-                        ? "text-success"
-                        : action.color === "warning"
-                          ? "text-warning"
-                          : "text-destructive"
+                    ? "text-primary"
+                    : action.color === "success"
+                      ? "text-success"
+                      : action.color === "warning"
+                        ? "text-warning"
+                        : "text-destructive"
                     }`}
                 />
               </div>

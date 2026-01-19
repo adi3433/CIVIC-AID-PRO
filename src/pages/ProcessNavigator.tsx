@@ -191,6 +191,7 @@ export default function ProcessNavigator() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
+            data-agent-id="application-search-input"
           />
         </div>
       </div>
@@ -198,7 +199,7 @@ export default function ProcessNavigator() {
       {/* Applications */}
       <div className="px-4 space-y-3">
         {filteredApplications.map((app) => (
-          <Card key={app.id} variant="default" className="p-4">
+          <Card key={app.id} variant="default" className="p-4" data-agent-id={`application-card-${app.id}`}>
             <div className="space-y-3">
               {/* Header */}
               <div className="flex items-start justify-between gap-2">
@@ -248,6 +249,7 @@ export default function ProcessNavigator() {
                 onClick={() =>
                   setSelectedApp(selectedApp === app.id ? null : app.id)
                 }
+                data-agent-id={`view-steps-btn-${app.id}`}
               >
                 {selectedApp === app.id ? "Hide Steps" : "View Steps"}
               </Button>
@@ -259,13 +261,12 @@ export default function ProcessNavigator() {
                     <div key={step.step} className="flex gap-3">
                       <div className="flex flex-col items-center">
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            step.status === "completed"
+                          className={`w-8 h-8 rounded-full flex items-center justify-center ${step.status === "completed"
                               ? "bg-green-500 text-white"
                               : step.status === "current"
                                 ? "bg-blue-500 text-white"
                                 : "bg-muted text-muted-foreground"
-                          }`}
+                            }`}
                         >
                           {step.status === "completed" ? (
                             <CheckCircle2 className="w-4 h-4" />
@@ -277,11 +278,10 @@ export default function ProcessNavigator() {
                         </div>
                         {step.step < app.totalSteps && (
                           <div
-                            className={`w-0.5 h-12 ${
-                              step.status === "completed"
+                            className={`w-0.5 h-12 ${step.status === "completed"
                                 ? "bg-green-500"
                                 : "bg-muted"
-                            }`}
+                              }`}
                           />
                         )}
                       </div>

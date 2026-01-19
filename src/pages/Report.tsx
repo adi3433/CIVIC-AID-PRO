@@ -507,8 +507,8 @@ export default function Report() {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4">
         <TabsList className="w-full grid grid-cols-2 mb-4">
-          <TabsTrigger value="new">New Report</TabsTrigger>
-          <TabsTrigger value="my">My Reports</TabsTrigger>
+          <TabsTrigger value="new" data-agent-id="tab-new-report">New Report</TabsTrigger>
+          <TabsTrigger value="my" data-agent-id="tab-my-reports">My Reports</TabsTrigger>
         </TabsList>
 
         <TabsContent value="new" className="space-y-4 mt-0 pb-20">
@@ -535,6 +535,7 @@ export default function Report() {
               setIsManualMode(false);
               fileInputRef.current?.click();
             }}
+            data-agent-id="ai-analysis-card"
           >
             <div className="relative z-10 flex items-center gap-4">
               <div className="p-3 bg-primary-foreground/20 rounded-xl">
@@ -582,6 +583,7 @@ export default function Report() {
               setDetectedCategory(null);
               setDescription("");
             }}
+            data-agent-id="manual-report-card"
           >
             <div className="flex items-center gap-4">
               <div className="p-3 bg-secondary/10 rounded-xl">
@@ -699,38 +701,38 @@ export default function Report() {
                     variant="interactive"
                     size="sm"
                     className={`flex flex-col items-center gap-2 py-4 border-2 ${detectedCategory === cat.id
-                        ? "border-primary bg-primary/5"
-                        : "border-transparent"
+                      ? "border-primary bg-primary/5"
+                      : "border-transparent"
                       }`}
                     onClick={() => setDetectedCategory(cat.id)}
                     data-agent-id={`category-btn-${cat.id}`}
                   >
                     <div
                       className={`p-2.5 rounded-xl ${cat.color === "primary"
-                          ? "bg-primary/10"
-                          : cat.color === "success"
-                            ? "bg-success/10"
-                            : cat.color === "warning"
-                              ? "bg-warning/10"
-                              : cat.color === "info"
-                                ? "bg-info/10"
-                                : cat.color === "secondary"
-                                  ? "bg-secondary/10"
-                                  : "bg-destructive/10"
+                        ? "bg-primary/10"
+                        : cat.color === "success"
+                          ? "bg-success/10"
+                          : cat.color === "warning"
+                            ? "bg-warning/10"
+                            : cat.color === "info"
+                              ? "bg-info/10"
+                              : cat.color === "secondary"
+                                ? "bg-secondary/10"
+                                : "bg-destructive/10"
                         }`}
                     >
                       <cat.icon
                         className={`w-5 h-5 ${cat.color === "primary"
-                            ? "text-primary"
-                            : cat.color === "success"
-                              ? "text-success"
-                              : cat.color === "warning"
-                                ? "text-warning"
-                                : cat.color === "info"
-                                  ? "text-info"
-                                  : cat.color === "secondary"
-                                    ? "text-secondary"
-                                    : "text-destructive"
+                          ? "text-primary"
+                          : cat.color === "success"
+                            ? "text-success"
+                            : cat.color === "warning"
+                              ? "text-warning"
+                              : cat.color === "info"
+                                ? "text-info"
+                                : cat.color === "secondary"
+                                  ? "text-secondary"
+                                  : "text-destructive"
                           }`}
                       />
                     </div>
@@ -858,6 +860,7 @@ export default function Report() {
                       size="sm"
                       className="cursor-pointer"
                       onClick={() => setSelectedReport(report)}
+                      data-agent-id={`nearby-report-item-${report.id}`}
                     >
                       <div className="flex gap-3">
                         {/* Thumbnail */}
@@ -899,6 +902,7 @@ export default function Report() {
                                 handleUpvote(report.id);
                               }}
                               disabled={votingReport === report.id}
+                              data-agent-id={`report-upvote-${report.id}`}
                             >
                               <ArrowUp className="w-3.5 h-3.5" />
                               <span className="text-xs font-medium">
@@ -915,6 +919,7 @@ export default function Report() {
                                 handleDownvote(report.id);
                               }}
                               disabled={votingReport === report.id}
+                              data-agent-id={`report-downvote-${report.id}`}
                             >
                               <ArrowDown className="w-3.5 h-3.5" />
                               <span className="text-xs font-medium">
@@ -973,6 +978,7 @@ export default function Report() {
                   size="sm"
                   onClick={() => setSelectedReport(report)}
                   className="cursor-pointer"
+                  data-agent-id={`my-report-item-${report.id}`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
@@ -1056,30 +1062,30 @@ export default function Report() {
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">
                       <div
                         className={`p-2 rounded-lg ${categoryObj?.color === "primary"
-                            ? "bg-primary/10"
-                            : categoryObj?.color === "success"
-                              ? "bg-success/10"
-                              : categoryObj?.color === "warning"
-                                ? "bg-warning/10"
-                                : categoryObj?.color === "info"
-                                  ? "bg-info/10"
-                                  : categoryObj?.color === "secondary"
-                                    ? "bg-secondary/10"
-                                    : "bg-destructive/10"
+                          ? "bg-primary/10"
+                          : categoryObj?.color === "success"
+                            ? "bg-success/10"
+                            : categoryObj?.color === "warning"
+                              ? "bg-warning/10"
+                              : categoryObj?.color === "info"
+                                ? "bg-info/10"
+                                : categoryObj?.color === "secondary"
+                                  ? "bg-secondary/10"
+                                  : "bg-destructive/10"
                           }`}
                       >
                         <CategoryIcon
                           className={`w-5 h-5 ${categoryObj?.color === "primary"
-                              ? "text-primary"
-                              : categoryObj?.color === "success"
-                                ? "text-success"
-                                : categoryObj?.color === "warning"
-                                  ? "text-warning"
-                                  : categoryObj?.color === "info"
-                                    ? "text-info"
-                                    : categoryObj?.color === "secondary"
-                                      ? "text-secondary"
-                                      : "text-destructive"
+                            ? "text-primary"
+                            : categoryObj?.color === "success"
+                              ? "text-success"
+                              : categoryObj?.color === "warning"
+                                ? "text-warning"
+                                : categoryObj?.color === "info"
+                                  ? "text-info"
+                                  : categoryObj?.color === "secondary"
+                                    ? "text-secondary"
+                                    : "text-destructive"
                             }`}
                         />
                       </div>
@@ -1125,6 +1131,7 @@ export default function Report() {
                             className="w-full bg-success hover:bg-success/90"
                             onClick={handleVerifyReport}
                             disabled={verifying}
+                            data-agent-id="verify-report-btn"
                           >
                             {verifying ? (
                               <>

@@ -16,6 +16,7 @@ import { chatbotService } from "@/lib/chatbotService";
 import { scanPage } from "@/lib/agent/pageScanner";
 import { executeAction } from "@/lib/agent/agentExecutor";
 import { AgentContext } from "@/lib/agent/types";
+import { dispatchAgentModeStart } from "@/components/agent";
 
 export function VoiceNavigationButton() {
   const navigate = useNavigate();
@@ -52,26 +53,91 @@ export function VoiceNavigationButton() {
     setAgentStatus("Stopping...");
   };
 
+  // OPTIMIZED: Smart wait for element to appear (instead of fixed delays)
+  const waitForElement = async (selector: string, timeout = 500): Promise<boolean> => {
+    const start = Date.now();
+    while (Date.now() - start < timeout) {
+      if (document.querySelector(selector)) return true;
+      await new Promise(r => setTimeout(r, 50)); // Check every 50ms
+    }
+    return false;
+  };
+
+  // SMART: Wait for page content to fully load
+  // - Waits for loading spinners/skeletons to disappear
+  // - Waits for element count to stabilize (DOM settled)
+  const waitForPageReady = async (maxWait = 300): Promise<void> => {
+    const start = Date.now();
+    let lastElementCount = 0;
+    let stableFrames = 0;
+
+    // First, wait for any visible loading indicators
+    while (Date.now() - start < maxWait) {
+      // Common loading patterns
+      const hasLoading = document.querySelector(
+        '[data-loading], .loading, [aria-busy="true"], .animate-spin, .skeleton, [class*="loader"]'
+      );
+
+      if (!hasLoading) break;
+      await new Promise(r => setTimeout(r, 100));
+    }
+
+    // Second, wait for DOM to stabilize (element count stops changing)
+    // This catches async-rendered content like API data
+    while (Date.now() - start < maxWait) {
+      const currentCount = document.querySelectorAll(
+        'button, a[href], input, [role="button"], [data-agent-id]'
+      ).length;
+
+      if (currentCount === lastElementCount) {
+        stableFrames++;
+        if (stableFrames >= 3) {
+          // DOM stable for 3 checks (~150ms)
+          return;
+        }
+      } else {
+        stableFrames = 0;
+        lastElementCount = currentCount;
+      }
+
+      await new Promise(r => setTimeout(r, 50));
+    }
+  };
+
   const runAgentLoop = async (userGoal: string) => {
+    // Trigger the "Switching to Auto Mode" transition animation
+    dispatchAgentModeStart();
+
+    // Wait for transition animation to complete before starting
+    await new Promise(r => setTimeout(r, 2000));
+
     setIsProcessing(true);
     setAgentStatus("Analyzing request...");
     stopAgentRef.current = false;
 
+    // Import cache for invalidation
+    const { agentCache } = await import("@/lib/agent/agentCache");
+
     let history: string[] = [];
     const MAX_STEPS = 10;
     let steps = 0;
+    let forceRefreshNextScan = false; // Flag to force fresh DOM scan
 
     try {
       while (steps < MAX_STEPS && !stopAgentRef.current) {
-        // 1. Persevere: Scan the page
-        const pageElements = scanPage();
+        // 1. Scan the page (force refresh after navigation)
+        const pageElements = scanPage(forceRefreshNextScan);
+        forceRefreshNextScan = false; // Reset flag
+
         const context: AgentContext = {
           currentUrl: window.location.pathname,
           pageTitle: document.title,
           interactiveElements: pageElements,
         };
 
-        // 2. Reason: Ask AI what to do
+        console.log(`📍 Step ${steps + 1}: On ${context.currentUrl}, found ${pageElements.length} elements`);
+
+        // 2. Ask AI what to do
         setAgentStatus(`Thinking... (Step ${steps + 1})`);
         const decision = await chatbotService.decideNextStep(
           userGoal,
@@ -81,7 +147,7 @@ export function VoiceNavigationButton() {
 
         console.log("Agent Decision:", decision);
         history.push(
-          `Step ${steps + 1}: Thought: "${decision.thoughtProcess}" -> Action: ${decision.action.type} on ${JSON.stringify(decision.action.parameters)}`,
+          `Step ${steps + 1}: On page "${context.currentUrl}" → Action: ${decision.action.type}(${JSON.stringify(decision.action.parameters)})`,
         );
 
         if (decision.action.type === "none") {
@@ -89,7 +155,7 @@ export function VoiceNavigationButton() {
           break;
         }
 
-        // 3. Act: Execute the command
+        // 3. Execute the command
         setAgentStatus(`Executing: ${decision.action.type}...`);
 
         // Special internal actions handling (theme/mode)
@@ -103,31 +169,46 @@ export function VoiceNavigationButton() {
           decision.action.parameters.id === "elderly-mode-btn"
         ) {
           setElderlyMode(!elderlyMode);
+        } else if (decision.action.type === "navigate") {
+          // Handle navigation with cache invalidation
+          if (decision.action.parameters.route) {
+            navigate(decision.action.parameters.route);
+
+            // CRITICAL: Clear ALL cache after navigation (URL changed!)
+            agentCache.clear();
+
+            // Force fresh page scan on next iteration
+            forceRefreshNextScan = true;
+
+            // Wait longer for new page to fully load
+            // React needs time to mount + API calls need to complete + re-render with data
+            await waitForPageReady(2000);
+
+            // Add explicit history entry so AI knows navigation succeeded
+            history.push(`✅ Navigation successful: Now on ${decision.action.parameters.route}`);
+          }
         } else {
-          // General executor
+          // General executor (click, type)
           const result = await executeAction(decision.action);
 
-          if (!result.success && decision.action.type === "navigate") {
-            // Handle navigation specifically if executor didn't (usually executor returns true for nav)
-            if (decision.action.parameters.route) {
-              navigate(decision.action.parameters.route);
-              // Allow time for page load
-              await new Promise((r) => setTimeout(r, 1500));
-            }
-          } else if (!result.success) {
+          if (!result.success) {
             console.warn("Action failed:", result.message);
-            // history.push(`Error: ${result.message}`);
+            history.push(`⚠️ Action failed: ${result.message}`);
+          } else {
+            // Successful action might have changed page state
+            agentCache.invalidatePageContext();
           }
         }
 
-        // Wait a bit for UI to settle
-        await new Promise((r) => setTimeout(r, 1000));
+        // Wait for UI to settle
+        await waitForPageReady(300);
         steps++;
       }
 
+      // Task completed - let AgentModeIndicator handle the visual feedback
+      // (Removed duplicate setFeedbackType/setShowFeedback to avoid duplicate "Done!" indicator)
       setAgentStatus(null);
-      setFeedbackType("success");
-      setShowFeedback(true);
+
     } catch (error) {
       console.error("Agent Loop Error:", error);
       setAgentStatus("Error occurred");
@@ -239,11 +320,10 @@ export function VoiceNavigationButton() {
       {(isProcessing || showFeedback) && (
         <div className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4">
           <div
-            className={`px-6 py-3 rounded-full shadow-lg flex items-center gap-3 ${
-              feedbackType === "error"
-                ? "bg-destructive text-destructive-foreground"
-                : "bg-primary text-primary-foreground"
-            }`}
+            className={`px-6 py-3 rounded-full shadow-lg flex items-center gap-3 ${feedbackType === "error"
+              ? "bg-destructive text-destructive-foreground"
+              : "bg-primary text-primary-foreground"
+              }`}
           >
             {isProcessing ? (
               <>
@@ -281,12 +361,11 @@ export function VoiceNavigationButton() {
 
       <Button
         size="icon"
-        className={`fixed bottom-44 right-6 h-14 w-14 rounded-full shadow-xl transition-all duration-300 z-50 ${
-          isListening
-            ? "bg-red-500 hover:bg-red-600 scale-110 animate-pulse"
-            : "bg-primary hover:bg-primary/90 hover:scale-105"
-        }`}
-        onClick={isListening ? () => {} : startListening}
+        className={`fixed bottom-44 right-6 h-14 w-14 rounded-full shadow-xl transition-all duration-300 z-50 ${isListening
+          ? "bg-red-500 hover:bg-red-600 scale-110 animate-pulse"
+          : "bg-primary hover:bg-primary/90 hover:scale-105"
+          }`}
+        onClick={isListening ? () => { } : startListening}
       >
         {isListening ? (
           <Mic className="h-6 w-6 text-white animate-bounce" />

@@ -30,6 +30,7 @@ export function UtilityCard({
       size="default"
       onClick={onClick}
       className="cursor-pointer relative overflow-hidden"
+      data-agent-id={`utility-card-${utility.id}`}
     >
       <div className="flex items-center gap-4">
         {/* Icon */}
@@ -61,10 +62,10 @@ export function UtilityCard({
                 <Badge
                   variant="outline"
                   className={`text-xs ${isOverdue
-                      ? "bg-destructive/10 text-destructive border-destructive/30"
-                      : isDue
-                        ? "bg-warning/10 text-warning border-warning/30"
-                        : "bg-success/10 text-success border-success/30"
+                    ? "bg-destructive/10 text-destructive border-destructive/30"
+                    : isDue
+                      ? "bg-warning/10 text-warning border-warning/30"
+                      : "bg-success/10 text-success border-success/30"
                     }`}
                 >
                   {isOverdue ? "Overdue" : isDue ? "Due Now" : "Paid"}
@@ -92,7 +93,7 @@ export function UtilityCard({
               onPay(e);
             }}
             className="shrink-0"
-            data-agent-id={`pay-action-${utility.type}`}
+            data-agent-id={`pay-btn-${utility.id}`}
           >
             Pay
           </Button>

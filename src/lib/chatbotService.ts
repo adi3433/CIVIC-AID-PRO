@@ -1,5 +1,7 @@
-import { generateContent, AGENT_MODEL_ID } from "@/lib/geminiService";
+import { generateAgentDecision } from "@/lib/geminiService";
 import { AgentAction, AgentContext } from "@/lib/agent/types";
+import { agentCache } from "@/lib/agent/agentCache";
+import { parseAgentResponse, AgentDecisionResponse } from "@/lib/agent/agentSchema";
 
 export interface ChatMessage {
   role: "user" | "assistant";
@@ -15,19 +17,35 @@ export interface ChatbotResponse {
     route?: string;
     action?: string;
   }[];
-  agentAction?: AgentAction; // New field for agent commands
+  agentAction?: AgentAction;
+}
+
+// Optimized element rendering for prompts
+const MAX_ELEMENTS = 50;
+const MAX_TEXT_LENGTH = 40;
+
+function formatElementsForPrompt(elements: { id: string; type: string; text: string }[]): string {
+  return elements
+    .slice(0, MAX_ELEMENTS)
+    .map(el => {
+      const text = el.text.length > MAX_TEXT_LENGTH
+        ? el.text.substring(0, MAX_TEXT_LENGTH) + "..."
+        : el.text;
+      return `- [${el.type}] "${text}" → ID: ${el.id}`;
+    })
+    .join("\n");
 }
 
 export const chatbotService = {
   /**
-   * Standard Chat Mode
+   * Standard Chat Mode (unchanged)
    */
   async sendMessage(
     userMessage: string,
     conversationHistory: ChatMessage[] = [],
   ): Promise<ChatbotResponse> {
+    const { generateContent } = await import("@/lib/geminiService");
 
-    // Fallback to legacy behavior if not in explicit agent mode (simplified for brevity of this edit)
     const context = conversationHistory
       .slice(-6)
       .map((msg) => `${msg.role === "user" ? "User" : "Assistant"}: ${msg.content}`)
@@ -48,118 +66,181 @@ export const chatbotService = {
   },
 
   /**
-   * Autonomous Agent Mode (The "Brain")
-   * Decides the next step based on the user's goal and the current page state.
+   * Autonomous Agent Mode with Enhanced Chain of Thought
+   * Features: Caching, Schema Validation, Low-Confidence Handling
    */
   async decideNextStep(
     userGoal: string,
     context: AgentContext,
     history: string[] = []
-  ): Promise<{ action: AgentAction; thoughtProcess: string }> {
+  ): Promise<{ action: AgentAction; thoughtProcess: string; confidence: number; cached: boolean }> {
+    const startTime = Date.now();
 
-    // Construct a rich prompt for the Thinking Model
-    const interactiveElementsList = context.interactiveElements
-      .map(el => `- [${el.type}] "${el.text}" (ID: ${el.id})`)
-      .join("\n");
+    // === CACHE CHECK: Only use cache for FIRST step (history empty) ===
+    // For multi-step flows, always get fresh decision from AI
+    const isFirstStep = history.length === 0;
+    const cachedDecision = isFirstStep ? agentCache.getDecision(userGoal, context.currentUrl) : null;
 
-    const systemPrompt = `You are an Autonomous browser agent navigating the CivicAid app.
-Your goal is to fulfill the user's request by interacting with the page.
+    if (cachedDecision && cachedDecision.confidence >= 70) {
+      console.log(`⚡ Using cached decision (${Date.now() - startTime}ms)`);
+      return {
+        action: {
+          type: cachedDecision.action as AgentAction["type"],
+          parameters: cachedDecision.parameters as AgentAction["parameters"],
+        },
+        thoughtProcess: "Using cached decision from previous identical request.",
+        confidence: cachedDecision.confidence,
+        cached: true,
+      };
+    }
 
-CURRENT PAGE: "${context.pageTitle}" (URL: ${context.currentUrl})
+    // === BUILD ENHANCED PROMPT ===
+    const elementsList = formatElementsForPrompt(context.interactiveElements);
 
-AVAILABLE ELEMENTS:
-${interactiveElementsList.slice(0, 5000)} ${interactiveElementsList.length > 5000 ? "...(truncated)" : ""}
+    const systemPrompt = `You are an Autonomous browser agent for the CivicAid app.
+Your goal: Fulfill the user's request by selecting the correct UI action.
 
-USER GOAL: "${userGoal}"
+=== STRATEGIC REASONING (Complete ALL steps before acting) ===
 
-HISTORY (Last 5 steps):
-${history.slice(-5).join("\n")}
+STEP 1 - GOAL ANALYSIS:
+• What is the user trying to accomplish?
+• What is the success state (e.g., "payment confirmed", "report submitted")?
 
-INSTRUCTIONS:
-1. THINK: Analyze the page and the goal. 
-   - If the goal requires a specific page, NAVIGATE there first.
-   - If you are on the right page but need a specific tab (e.g., "Child Safety", "Digital Safety"), CLICK the tab first.
-   - If you need to input data (e.g., phone number, URL, report description), TYPE it into the correct input field.
-   - finally, CLICK the action button (e.g., "Check", "Submit").
+STEP 2 - CONTEXT CHECK:
+• Current page: "${context.pageTitle}" (URL: ${context.currentUrl})
+• Am I on the correct page for this goal?
+• If not, I should NAVIGATE first.
 
-2. ACT: Choose ONE action from the list below.
-   - navigate(route): Go to a new page (e.g., /report, /safety, /payments, /home, /schemes).
-   - click_element(id): Click a button, link, or tab matching an ID from the list.
-   - type_text(id, text): Type text into an input field.
-   - none: If the goal is complete or you are stuck.
+STEP 3 - ELEMENT MATCHING:
+• Scan the AVAILABLE ELEMENTS list below
+• Find an element ID that matches the required action
+• If EXACT match not found, look for similar IDs
+• If NO suitable element exists, return action "none"
 
-RESPONSE FORMAT:
-You MUST respond with a valid JSON object. Do not wrap in markdown code blocks.
+STEP 4 - CONFIDENCE CHECK:
+• Am I certain this element ID exists in the list?
+• Is this action likely to succeed?
+• If confidence < 60, I MUST return action "none" instead
+
+=== AVAILABLE ELEMENTS ===
+${elementsList}
+${context.interactiveElements.length > MAX_ELEMENTS ? `...(${context.interactiveElements.length - MAX_ELEMENTS} more elements truncated)` : ""}
+
+=== USER GOAL ===
+"${userGoal}"
+
+=== RECENT HISTORY ===
+${history.slice(-3).join("\n") || "No previous actions"}
+
+=== CRITICAL RULES ===
+❌ NEVER invent element IDs - ONLY use IDs from AVAILABLE ELEMENTS
+❌ If confidence < 60, MUST return "none"
+✅ If target is hidden, click relevant TABS or NAVIGATION to reveal it
+✅ If goal appears complete (success message visible), return "none"
+✅ If correct page not loaded, use "navigate" first
+
+=== FLOW EXAMPLES ===
+
+PAYMENT ("Pay water bill"):
+1. If not on /payments → navigate("/payments")
+2. Click "pay-action-water"
+3. Click "checkout-proceed-btn"
+4. Click "checkout-confirm-btn"
+5. See success → action: "none"
+
+SAFETY CHECK ("Is +919876543210 a scam?"):
+1. If not on /safety → navigate("/safety")
+2. Click "tab-digital-safety"
+3. Type in "phone-check-input"
+4. Click "phone-check-btn"
+5. See result → action: "none"
+
+=== OUTPUT FORMAT ===
+Respond with ONLY a JSON object (no markdown, no extra text):
 {
-  "thought": "I am on the Safety page. The user wants to check a phone number. I see the 'Digital Safety' tab. I must click it first to access the phone checker.",
-  "action": "click_element",
-  "parameters": { "id": "tab-digital-safety" }
-}
-
-OR
-
-{
-  "thought": "I am on the Digital Safety tab. I see the phone input. I will type the number.",
-  "action": "type_text",
-  "parameters": { "id": "phone-check-input", "text": "9061737021" }
-}
-`;
+  "reasoning_steps": {
+    "goal": "What user wants to achieve",
+    "current_context": "Where I am and what I see",
+    "element_match": "Element ID I found and why I chose it",
+    "validation": "Why I'm confident this action is correct"
+  },
+  "action": "navigate" | "click_element" | "type_text" | "none",
+  "parameters": { "route": "/path" } OR { "id": "element-id" } OR { "id": "input-id", "text": "content" },
+  "confidence": 0-100
+}`;
 
     try {
-      console.log("Agent Reasoning...");
-      // K2 Thinking model requires more tokens for its internal thought process
-      // User constrained max tokens to 4096
-      const responseText = await generateContent(systemPrompt, AGENT_MODEL_ID, 4096);
+      console.log("🧠 Agent Reasoning...");
+      const responseText = await generateAgentDecision(systemPrompt);
+      console.log("📝 Raw Response (first 300):", responseText.substring(0, 300));
 
-      console.log("Raw Agent Response (First 200 chars):", responseText.substring(0, 200));
+      // === PARSE & VALIDATE ===
+      const parsed = parseAgentResponse(responseText);
 
-      // Robust JSON Extraction
-      let cleanJson = responseText;
-
-      // 1. Try to extract from markdown code blocks first
-      const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/) || responseText.match(/```\n([\s\S]*?)\n```/);
-      if (jsonMatch) {
-        cleanJson = jsonMatch[1];
-      } else {
-        // 2. If no blocks, try to find the first '{' and last '}'
-        const start = responseText.indexOf("{");
-        const end = responseText.lastIndexOf("}");
-        if (start !== -1 && end !== -1) {
-          cleanJson = responseText.substring(start, end + 1);
-        }
+      if (!parsed) {
+        console.error("❌ Failed to parse agent response");
+        return this.createFallbackResponse("Failed to parse AI response");
       }
 
-      // Cleanup common JSON errors from LLMs
-      cleanJson = cleanJson.trim()
-        .replace(/,\s*}/g, "}") // Remove trailing commas
-        .replace(/,\s*]/g, "]");
-
-      let parsed;
-      try {
-        parsed = JSON.parse(cleanJson);
-      } catch (jsonError) {
-        console.error("JSON Parse Failed:", jsonError);
-        console.log("Failed JSON Content:", cleanJson);
-        // Fallback: Use a regex to try and extract the action and params if JSON fails
-        throw new Error("Invalid JSON format from Agent");
+      // === CONFIDENCE CHECK ===
+      if (parsed.confidence < 60 && parsed.action !== "none") {
+        console.warn(`⚠️ Low confidence (${parsed.confidence}), converting to "none"`);
+        return {
+          action: { type: "none", parameters: { description: "Confidence too low to proceed safely" } },
+          thoughtProcess: parsed.reasoning_steps?.validation || parsed.thought || "Low confidence",
+          confidence: parsed.confidence,
+          cached: false,
+        };
       }
+
+      // === CACHE THE DECISION ===
+      if (parsed.confidence >= 70 && parsed.action !== "none") {
+        agentCache.setDecision(
+          userGoal,
+          context.currentUrl,
+          parsed.action,
+          parsed.parameters as Record<string, unknown>,
+          parsed.confidence
+        );
+      }
+
+      const latency = Date.now() - startTime;
+      console.log(`✅ Decision made in ${latency}ms (confidence: ${parsed.confidence})`);
 
       return {
         action: {
           type: parsed.action,
-          parameters: parsed.parameters
+          parameters: parsed.parameters,
         },
-        thoughtProcess: parsed.thought || "Processing..."
+        thoughtProcess: parsed.reasoning_steps?.validation || parsed.thought || "Processing...",
+        confidence: parsed.confidence,
+        cached: false,
       };
 
     } catch (error) {
-      console.error("Agent decision error:", error);
-      // Return a safe 'none' action instead of crashing, allowing the user to try again
-      return {
-        action: { type: "none", parameters: { description: "I encountered an error. Please try again." } },
-        thoughtProcess: "I encountered an error deciding the next step. I will stop for safety."
-      };
+      console.error("❌ Agent decision error:", error);
+      return this.createFallbackResponse("Error during decision making");
     }
+  },
+
+  /**
+   * Create safe fallback response
+   */
+  createFallbackResponse(reason: string): { action: AgentAction; thoughtProcess: string; confidence: number; cached: boolean } {
+    return {
+      action: { type: "none", parameters: { description: reason } },
+      thoughtProcess: `I encountered an issue: ${reason}. Stopping for safety.`,
+      confidence: 0,
+      cached: false,
+    };
+  },
+
+  /**
+   * Invalidate cache after successful action (state changed)
+   */
+  invalidateCache(url?: string): void {
+    agentCache.invalidateDecisions(url);
+    agentCache.invalidatePageContext();
   },
 
   generateSuggestions(text: string): string[] {

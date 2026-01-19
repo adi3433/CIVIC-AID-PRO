@@ -290,6 +290,7 @@ export default function AntiBribery() {
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search fines, fees, documents..."
             className="pl-10"
+            data-agent-id="antibribery-search-input"
           />
         </div>
       </div>
@@ -316,7 +317,7 @@ export default function AntiBribery() {
       <div className="px-4 pt-3 pb-4">
         <Sheet open={reportSheetOpen} onOpenChange={setReportSheetOpen}>
           <SheetTrigger asChild>
-            <Button className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+            <Button className="w-full bg-destructive hover:bg-destructive/90 text-destructive-foreground" data-agent-id="antibribery-report-btn">
               <AlertTriangle className="w-4 h-4 mr-2" />
               Report Bribery
             </Button>

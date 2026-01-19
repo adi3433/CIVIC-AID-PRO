@@ -134,6 +134,7 @@ export default function Library() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
+            data-agent-id="library-search-input"
           />
         </div>
       </div>
@@ -150,6 +151,7 @@ export default function Library() {
                 selectedCategory === category.id ? null : category.id,
               )
             }
+            data-agent-id={`library-category-${category.id}`}
           >
             <div className="flex items-center gap-3 mb-3">
               <div className={`p-2 rounded-lg ${category.color}`}>
@@ -174,6 +176,7 @@ export default function Library() {
                   <div
                     key={idx}
                     className="p-3 bg-card rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                    data-agent-id={`library-article-${category.id}-${idx}`}
                   >
                     <h4 className="font-medium text-foreground text-sm">
                       {article.title}

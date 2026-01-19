@@ -103,11 +103,10 @@ export default function Payments() {
 
             <div className="flex gap-2">
               <div
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur-md ${
-                  (profile?.safetyScore || 0) > 80
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium backdrop-blur-md ${(profile?.safetyScore || 0) > 80
                     ? "bg-green-500/20 text-green-100"
                     : "bg-yellow-500/20 text-yellow-100"
-                }`}
+                  }`}
               >
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Safety Score: {profile?.safetyScore}/100
@@ -123,6 +122,7 @@ export default function Payments() {
             variant={activeTab === "overview" ? "default" : "secondary"}
             className="flex-1 rounded-xl shadow-none"
             onClick={() => setActiveTab("overview")}
+            data-agent-id="tab-overview"
           >
             Overview
           </Button>
@@ -130,6 +130,7 @@ export default function Payments() {
             variant={activeTab === "safety" ? "default" : "secondary"}
             className={`flex-1 rounded-xl shadow-none ${activeTab === "safety" ? "bg-indigo-600 hover:bg-indigo-700" : ""}`}
             onClick={() => setActiveTab("safety")}
+            data-agent-id="tab-safety"
           >
             <ShieldCheck className="w-4 h-4 mr-2" />
             Safety
@@ -163,7 +164,7 @@ export default function Payments() {
                         <UtilityCard
                           utility={utility}
                           bill={latestBill}
-                          onClick={() => {}}
+                          onClick={() => { }}
                           onPay={(e) => handlePay(e, latestBill)}
                         />
                       </div>
@@ -205,8 +206,9 @@ export default function Payments() {
                   type="text"
                   placeholder="Paste payment link here (e.g. bit.ly/...)"
                   className="flex-1 px-3 py-2 rounded-md border text-sm bg-background"
+                  data-agent-id="verify-link-input"
                 />
-                <Button size="sm">Check</Button>
+                <Button size="sm" data-agent-id="verify-link-btn">Check</Button>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
                 We check against official databases and scam patterns.

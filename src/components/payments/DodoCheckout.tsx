@@ -78,6 +78,7 @@ export function DodoCheckout({ open, onOpenChange, bill, onSuccess }: DodoChecko
                         <Button
                             className="w-full bg-[#111] hover:bg-black text-[#FFD700] hover:text-[#FFD700]/90 font-semibold h-12 text-base transition-colors"
                             onClick={handlePay}
+                            data-agent-id="checkout-proceed-btn"
                         >
                             Proceed to Pay <ExternalLink className="w-4 h-4 ml-2" />
                         </Button>
@@ -101,7 +102,7 @@ export function DodoCheckout({ open, onOpenChange, bill, onSuccess }: DodoChecko
                         </div>
 
                         <div className="flex flex-col gap-3 w-full">
-                            <Button onClick={handleManualVerify} className="w-full bg-green-600 hover:bg-green-700 text-white">
+                            <Button onClick={handleManualVerify} className="w-full bg-green-600 hover:bg-green-700 text-white" data-agent-id="checkout-confirm-btn">
                                 I have completed payment
                             </Button>
                             <Button variant="ghost" onClick={() => setStep("initial")} className="w-full text-xs text-muted-foreground">
@@ -117,7 +118,7 @@ export function DodoCheckout({ open, onOpenChange, bill, onSuccess }: DodoChecko
                             <CheckCircle2 className="w-8 h-8 text-green-600" />
                         </div>
                         <div>
-                            <h3 className="font-semibold text-lg">Payment Successful!</h3>
+                            <h3 className="font-semibold text-lg" data-agent-id="payment-success-msg">Payment Successful!</h3>
                             <p className="text-muted-foreground text-sm">Thank you for your payment.</p>
                         </div>
                     </div>

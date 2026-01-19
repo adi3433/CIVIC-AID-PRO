@@ -123,7 +123,7 @@ export default function LocalOffices() {
       {/* Offices List */}
       <div className="px-4 py-4 space-y-3">
         {LOCAL_OFFICES.map((office) => (
-          <Card key={office.id} variant="default" className="p-4">
+          <Card key={office.id} variant="default" className="p-4" data-agent-id={`office-card-${office.id}`}>
             <div className="space-y-3">
               {/* Header */}
               <div>
@@ -179,6 +179,7 @@ export default function LocalOffices() {
                   variant="outline"
                   onClick={() => handleCall(office.phone)}
                   className="flex-1"
+                  data-agent-id={`office-call-${office.id}`}
                 >
                   <Phone className="w-4 h-4 mr-1" />
                   Call
@@ -187,6 +188,7 @@ export default function LocalOffices() {
                   size="sm"
                   onClick={() => handleGetDirections(office)}
                   className="flex-1"
+                  data-agent-id={`office-directions-${office.id}`}
                 >
                   <Navigation className="w-4 h-4 mr-1" />
                   Directions

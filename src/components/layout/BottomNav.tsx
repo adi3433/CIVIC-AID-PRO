@@ -21,6 +21,7 @@ export function BottomNav() {
           <NavLink
             key={item.path}
             to={item.path}
+            data-agent-id={`nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}
             className={({ isActive }) =>
               cn(
                 "flex flex-col items-center justify-center flex-1 h-full px-2 py-1 transition-all duration-200",

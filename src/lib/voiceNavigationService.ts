@@ -302,9 +302,13 @@ export async function processVoiceNavigation(transcriptInput?: string): Promise<
       };
     }
 
-    // Step 2: Translate to English if needed
+    // Step 2: Apply phonetic corrections for common voice recognition errors
+    const { correctPhonetics } = await import("./fuzzyMatcher");
+    let englishTranscript = correctPhonetics(transcript);
+    console.log("🔤 Phonetic correction applied:", transcript, "→", englishTranscript);
+
+    // Step 3: Translate to English if needed
     const currentLanguage = localStorage.getItem("app_language") || "en";
-    let englishTranscript = transcript;
 
     if (currentLanguage !== "en") {
       console.log("🌐 Translating to English for intent matching...");
@@ -315,7 +319,7 @@ export async function processVoiceNavigation(transcriptInput?: string): Promise<
         ml: "Malayalam",
       };
       englishTranscript = await translateToEnglish(
-        transcript,
+        englishTranscript,
         langNames[currentLanguage] || "the input language",
       );
     }

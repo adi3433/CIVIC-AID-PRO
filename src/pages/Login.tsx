@@ -129,6 +129,7 @@ export default function Login() {
                 onChange={handleChange}
                 required
                 disabled={loading}
+                data-agent-id="auth-fullname-input"
               />
             </div>
           )}
@@ -144,6 +145,7 @@ export default function Login() {
               onChange={handleChange}
               required
               disabled={loading}
+              data-agent-id="auth-email-input"
             />
           </div>
 
@@ -157,8 +159,8 @@ export default function Login() {
               value={formData.password}
               onChange={handleChange}
               required
-              disabled={loading}
               minLength={6}
+              data-agent-id="auth-password-input"
             />
             {mode === "signup" && (
               <p className="text-xs text-muted-foreground">
@@ -167,7 +169,7 @@ export default function Login() {
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading} size="lg">
+          <Button type="submit" className="w-full" disabled={loading} size="lg" data-agent-id="auth-submit-btn">
             {loading ? (
               <>
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
@@ -194,10 +196,10 @@ export default function Login() {
         {/* Toggle Mode */}
         <div className="mt-6 text-center">
           <button
-            type="button"
             onClick={() => setMode(mode === "login" ? "signup" : "login")}
             className="text-sm text-primary hover:underline disabled:opacity-50"
             disabled={loading}
+            data-agent-id="auth-toggle-mode-btn"
           >
             {mode === "login"
               ? "Don't have an account? Sign up"

@@ -213,6 +213,7 @@ export default function Profile() {
                   phone: profile?.phone || "",
                 });
               }}
+              data-agent-id="profile-edit-btn"
             >
               <Edit className="w-4 h-4" />
             </Button>
@@ -232,6 +233,7 @@ export default function Profile() {
                   }
                   placeholder={t("profile.enterFullName")}
                   disabled={loading}
+                  data-agent-id="profile-edit-name-input"
                 />
               </div>
               <div className="space-y-2">
@@ -246,6 +248,7 @@ export default function Profile() {
                   }
                   placeholder={t("profile.enterPhoneNumber")}
                   disabled={loading}
+                  data-agent-id="profile-edit-phone-input"
                 />
               </div>
               <div className="flex gap-2">
@@ -254,6 +257,7 @@ export default function Profile() {
                   onClick={handleSaveProfile}
                   disabled={loading}
                   className="flex-1"
+                  data-agent-id="profile-save-btn"
                 >
                   {loading ? (
                     <>
@@ -269,6 +273,7 @@ export default function Profile() {
                   variant="outline"
                   onClick={() => setIsEditing(false)}
                   disabled={loading}
+                  data-agent-id="profile-cancel-edit-btn"
                 >
                   {t("common.cancel")}
                 </Button>
@@ -276,15 +281,15 @@ export default function Profile() {
             </div>
           )}
         </Card>
-      </div>
+      </div >
 
       {/* Secure Document Vault */}
-      <div className="px-4 pb-4" id="secure-documents-section">
+      < div className="px-4 pb-4" id="secure-documents-section" >
         <SecureDocuments userId={user?.id || ""} />
-      </div>
+      </div >
 
       {/* Impact Dashboard */}
-      <div className="px-4 pb-4">
+      < div className="px-4 pb-4" >
         <h2 className="text-base font-semibold text-foreground mb-3">
           {t("profile.impact")}
         </h2>
@@ -316,10 +321,10 @@ export default function Profile() {
             </div>
           </Card>
         </div>
-      </div>
+      </div >
 
       {/* Elderly Mode */}
-      <div className="px-4 pb-4">
+      < div className="px-4 pb-4" >
         <Card
           variant="elevated"
           className="bg-gradient-to-br from-secondary/5 to-primary/5 border-secondary/20"
@@ -336,7 +341,7 @@ export default function Profile() {
                 {t("profile.elderlyMode.desc")}
               </p>
             </div>
-            <Switch checked={elderlyMode} onCheckedChange={setElderlyMode} />
+            <Switch checked={elderlyMode} onCheckedChange={setElderlyMode} data-agent-id="profile-elderly-mode-toggle" />
           </div>
           {elderlyMode && (
             <div className="mt-4 pt-4 border-t border-border/50 flex gap-3">
@@ -351,10 +356,10 @@ export default function Profile() {
             </div>
           )}
         </Card>
-      </div>
+      </div >
 
       {/* Settings */}
-      <div className="px-4 pb-40">
+      < div className="px-4 pb-40" >
         <h2 className="text-base font-semibold text-foreground mb-3">
           {t("profile.settings")}
         </h2>
@@ -371,6 +376,7 @@ export default function Profile() {
                 value={language}
                 onChange={(e) => setLanguage(e.target.value as any)}
                 className="text-xs text-muted-foreground bg-background border-none outline-none cursor-pointer [&>option]:bg-background [&>option]:text-foreground"
+                data-agent-id="profile-language-select"
               >
                 {languageOptions.map((lang) => (
                   <option
@@ -402,7 +408,7 @@ export default function Profile() {
                 {isDark ? t("profile.enabled") : t("profile.disabled")}
               </p>
             </div>
-            <Switch checked={isDark} onCheckedChange={toggleTheme} />
+            <Switch checked={isDark} onCheckedChange={toggleTheme} data-agent-id="profile-dark-mode-toggle" />
           </div>
 
           <div className="flex items-center gap-3 py-3">
@@ -437,6 +443,7 @@ export default function Profile() {
             <Switch
               checked={anonymousReporting}
               onCheckedChange={handleAnonymousToggle}
+              data-agent-id="profile-anonymous-toggle"
             />
           </div>
 
@@ -462,12 +469,14 @@ export default function Profile() {
                 window.dispatchEvent(new Event("storage"));
                 window.location.reload(); // Simplest way to propagate changes for now
               }}
+              data-agent-id="profile-agentic-mode-toggle"
             />
           </div>
 
           <div
             className="flex items-center gap-3 py-3 last:pb-0 cursor-pointer hover:bg-muted/50 rounded-lg transition-colors px-2 -mx-2"
             onClick={handleSignOut}
+            data-agent-id="profile-signout-btn"
           >
             <div className="p-2 bg-destructive/10 rounded-lg">
               <LogOut className="w-4 h-4 text-destructive" />
@@ -480,7 +489,7 @@ export default function Profile() {
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </div>
         </Card>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 }

@@ -147,11 +147,10 @@ export default function Schemes() {
       // Use Fireworks AI via helper service
       const { generateContent } = await import("@/lib/geminiService");
 
-      const prompt = `List current active Indian government schemes ${
-        category
-          ? `for ${category} category`
-          : "across all categories (Health, Housing, Farmer/Agriculture, Pension)"
-      }. For each scheme provide:
+      const prompt = `List current active Indian government schemes ${category
+        ? `for ${category} category`
+        : "across all categories (Health, Housing, Farmer/Agriculture, Pension)"
+        }. For each scheme provide:
 1. Official scheme name (exact from official portal)
 2. Category (Health/Housing/Farmer/Pension)
 3. Key benefits (brief, under 100 characters)
@@ -360,13 +359,14 @@ Provide REAL, accurate information from official government sources. RETURN JSON
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
+            data-agent-id="schemes-search-input"
           />
         </div>
       </div>
 
       {/* Eligibility Checker */}
       <div className="px-4 pb-4">
-        <Card variant="secondary" className="relative overflow-hidden">
+        <Card variant="secondary" className="relative overflow-hidden" data-agent-id="schemes-eligibility-checker">
           <div className="relative z-10 flex items-center gap-4">
             <div className="p-3 bg-secondary-foreground/20 rounded-xl">
               <Sparkles className="w-7 h-7 text-secondary-foreground" />
@@ -394,31 +394,29 @@ Provide REAL, accurate information from official government sources. RETURN JSON
               variant="interactive"
               size="sm"
               onClick={() => handleCategoryClick(cat.id)}
-              className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 cursor-pointer transition-all ${
-                selectedCategory === cat.id ? "ring-2 ring-primary" : ""
-              }`}
+              data-agent-id={`schemes-category-${cat.id}`}
+              className={`flex-shrink-0 flex items-center gap-2 px-4 py-3 cursor-pointer transition-all ${selectedCategory === cat.id ? "ring-2 ring-primary" : ""
+                }`}
             >
               <div
-                className={`p-2 rounded-lg ${
-                  cat.color === "destructive"
-                    ? "bg-destructive/10"
-                    : cat.color === "primary"
-                      ? "bg-primary/10"
-                      : cat.color === "success"
-                        ? "bg-success/10"
-                        : "bg-warning/10"
-                }`}
+                className={`p-2 rounded-lg ${cat.color === "destructive"
+                  ? "bg-destructive/10"
+                  : cat.color === "primary"
+                    ? "bg-primary/10"
+                    : cat.color === "success"
+                      ? "bg-success/10"
+                      : "bg-warning/10"
+                  }`}
               >
                 <cat.icon
-                  className={`w-4 h-4 ${
-                    cat.color === "destructive"
-                      ? "text-destructive"
-                      : cat.color === "primary"
-                        ? "text-primary"
-                        : cat.color === "success"
-                          ? "text-success"
-                          : "text-warning"
-                  }`}
+                  className={`w-4 h-4 ${cat.color === "destructive"
+                    ? "text-destructive"
+                    : cat.color === "primary"
+                      ? "text-primary"
+                      : cat.color === "success"
+                        ? "text-success"
+                        : "text-warning"
+                    }`}
                 />
               </div>
               <span className="text-sm font-medium text-foreground">
@@ -472,11 +470,10 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                     <div className="flex items-start justify-between mb-2">
                       <Badge
                         variant="outline"
-                        className={`text-xs ${
-                          result.priority === "high"
-                            ? "bg-destructive/10 text-destructive border-destructive/30"
-                            : "bg-warning/10 text-warning border-warning/30"
-                        }`}
+                        className={`text-xs ${result.priority === "high"
+                          ? "bg-destructive/10 text-destructive border-destructive/30"
+                          : "bg-warning/10 text-warning border-warning/30"
+                          }`}
                       >
                         {result.priority} priority
                       </Badge>
@@ -543,6 +540,7 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                     size="default"
                     className="flex-shrink-0 w-[75%] snap-center cursor-pointer"
                     onClick={() => handleSchemeClick(scheme)}
+                    data-agent-id={`scheme-card-${scheme.id}`}
                   >
                     <div className="flex items-start justify-between mb-2">
                       <Badge
@@ -575,6 +573,7 @@ Provide REAL, accurate information from official government sources. RETURN JSON
                           e.stopPropagation();
                           handleSchemeClick(scheme);
                         }}
+                        data-agent-id={`scheme-view-btn-${scheme.id}`}
                       >
                         View Details
                       </Button>

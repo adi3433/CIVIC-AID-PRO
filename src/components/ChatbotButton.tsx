@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { chatbotService, ChatMessage } from "@/lib/chatbotService";
+import { dispatchAgentModeStart } from "@/components/agent";
 
 // Markdown formatting helper
 const formatMarkdown = (text: string) => {
@@ -116,6 +117,9 @@ export function ChatbotButton() {
           pageTitle: document.title,
           interactiveElements: [], // NOTE: Chatbot doesn't scan page by default, we might need to add that.
         };
+
+        // Trigger the agent mode transition animation
+        dispatchAgentModeStart();
 
         // For now, let's keep it simple: explicitly mention Agent is thinking
         const assistantMessage: ChatMessage = {
@@ -335,11 +339,10 @@ export function ChatbotButton() {
                       className={`flex-1 max-w-[80%] ${msg.role === "user" ? "ml-auto" : ""}`}
                     >
                       <div
-                        className={`rounded-lg p-3 ${
-                          msg.role === "user"
+                        className={`rounded-lg p-3 ${msg.role === "user"
                             ? "bg-primary text-primary-foreground rounded-tr-none"
                             : "bg-muted rounded-tl-none"
-                        }`}
+                          }`}
                       >
                         <div className="text-sm whitespace-pre-wrap">
                           {formatMarkdown(msg.content)}

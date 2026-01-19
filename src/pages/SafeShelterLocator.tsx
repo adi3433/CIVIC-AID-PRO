@@ -23,11 +23,11 @@ interface Shelter {
   id: string;
   name: string;
   type:
-    | "school"
-    | "community_hall"
-    | "hospital"
-    | "relief_camp"
-    | "police_station";
+  | "school"
+  | "community_hall"
+  | "hospital"
+  | "relief_camp"
+  | "police_station";
   lat: number;
   lng: number;
   facilities: string[];
@@ -193,9 +193,9 @@ const calculateDistance = (
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((lat2 * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
@@ -390,6 +390,7 @@ export default function SafeShelterLocator() {
             disabled={loading}
             className="w-full bg-green-500 hover:bg-green-600"
             size="lg"
+            data-agent-id="find-shelters-btn"
           >
             {loading ? (
               <>
@@ -417,6 +418,7 @@ export default function SafeShelterLocator() {
                 size="sm"
                 onClick={handleFindShelters}
                 disabled={loading}
+                data-agent-id="refresh-shelters-btn"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -489,6 +491,7 @@ export default function SafeShelterLocator() {
                       size="sm"
                       onClick={() => handleGetDirections(shelter)}
                       className="flex-1 bg-blue-500 hover:bg-blue-600"
+                      data-agent-id={`shelter-directions-${shelter.id}`}
                     >
                       <Navigation className="w-4 h-4 mr-1" />
                       Directions
@@ -498,6 +501,7 @@ export default function SafeShelterLocator() {
                       variant="outline"
                       onClick={() => handleShareShelter(shelter)}
                       className="flex-1"
+                      data-agent-id={`shelter-share-${shelter.id}`}
                     >
                       <Share2 className="w-4 h-4 mr-1" />
                       Share
@@ -519,7 +523,7 @@ export default function SafeShelterLocator() {
             <p className="text-xs text-muted-foreground mb-4">
               No shelters within 10km of your location
             </p>
-            <Button variant="outline" size="sm" onClick={handleFindShelters}>
+            <Button variant="outline" size="sm" onClick={handleFindShelters} data-agent-id="try-again-shelters-btn">
               Try Again
             </Button>
           </Card>

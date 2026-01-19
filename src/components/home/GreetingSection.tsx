@@ -55,7 +55,7 @@ export function GreetingSection() {
             } else {
               setLocation(
                 data.display_name?.split(",").slice(0, 2).join(",") ||
-                  "Pala, Kottayam",
+                "Pala, Kottayam",
               );
             }
           } catch (error) {
@@ -95,7 +95,10 @@ export function GreetingSection() {
             <Sun className="w-4 h-4 text-warning" />
             <span className="text-sm font-medium">28°C</span>
           </div>
-          <button className="relative p-2 bg-card rounded-full shadow-sm border border-border hover:shadow-md transition-shadow">
+          <button
+            className="relative p-2 bg-card rounded-full shadow-sm border border-border hover:shadow-md transition-shadow"
+            data-agent-id="home-notification-btn"
+          >
             <Bell className="w-5 h-5 text-foreground" />
             <Badge
               variant="destructive"

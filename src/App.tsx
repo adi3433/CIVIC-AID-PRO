@@ -6,8 +6,10 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { AgentModeProvider } from "@/contexts/AgentModeContext";
 import { MobileLayout } from "./components/layout/MobileLayout";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { GhostCursor, AgentFocusOverlay, AgentModeIndicator, AgentModeTransition } from "./components/agent";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
@@ -31,64 +33,71 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
       <ThemeProvider>
-        <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <ScrollToTop />
-              <Routes>
-                {/* Public routes */}
-                <Route path="/login" element={<Login />} />
+        <AgentModeProvider>
+          <AuthProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <ScrollToTop />
+                {/* Agent Mode Visual Components */}
+                <AgentModeTransition isActive={true} />
+                <GhostCursor isActive={true} />
+                <AgentFocusOverlay isActive={true} />
+                <AgentModeIndicator isActive={true} />
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/login" element={<Login />} />
 
-                {/* Protected routes with layout */}
-                <Route
-                  path="/*"
-                  element={
-                    <ProtectedRoute>
-                      <MobileLayout>
-                        <Routes>
-                          <Route path="/" element={<Home />} />
-                          <Route path="/report" element={<Report />} />
-                          <Route path="/safety" element={<Safety />} />
-                          <Route
-                            path="/safety/emergency-contacts"
-                            element={<EmergencyContacts />}
-                          />
-                          <Route
-                            path="/safety/check-in"
-                            element={<SafetyCheckin />}
-                          />
-                          <Route
-                            path="/safety/shelter-locator"
-                            element={<SafeShelterLocator />}
-                          />
-                          <Route path="/schemes" element={<Schemes />} />
-                          <Route path="/payments" element={<Payments />} />
-                          <Route path="/profile" element={<Profile />} />
-                          <Route path="/library" element={<Library />} />
-                          <Route
-                            path="/local-offices"
-                            element={<LocalOffices />}
-                          />
-                          <Route
-                            path="/process-navigator"
-                            element={<ProcessNavigator />}
-                          />
-                          <Route
-                            path="/anti-bribery"
-                            element={<AntiBribery />}
-                          />
-                          <Route path="*" element={<NotFound />} />
-                        </Routes>
-                      </MobileLayout>
-                    </ProtectedRoute>
-                  }
-                />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </AuthProvider>
+                  {/* Protected routes with layout */}
+                  <Route
+                    path="/*"
+                    element={
+                      <ProtectedRoute>
+                        <MobileLayout>
+                          <Routes>
+                            <Route path="/" element={<Home />} />
+                            <Route path="/report" element={<Report />} />
+                            <Route path="/safety" element={<Safety />} />
+                            <Route
+                              path="/safety/emergency-contacts"
+                              element={<EmergencyContacts />}
+                            />
+                            <Route
+                              path="/safety/check-in"
+                              element={<SafetyCheckin />}
+                            />
+                            <Route
+                              path="/safety/shelter-locator"
+                              element={<SafeShelterLocator />}
+                            />
+                            <Route path="/schemes" element={<Schemes />} />
+                            <Route path="/payments" element={<Payments />} />
+                            <Route path="/profile" element={<Profile />} />
+                            <Route path="/library" element={<Library />} />
+                            <Route
+                              path="/local-offices"
+                              element={<LocalOffices />}
+                            />
+                            <Route
+                              path="/process-navigator"
+                              element={<ProcessNavigator />}
+                            />
+                            <Route
+                              path="/anti-bribery"
+                              element={<AntiBribery />}
+                            />
+                            <Route path="*" element={<NotFound />} />
+                          </Routes>
+                        </MobileLayout>
+                      </ProtectedRoute>
+                    }
+                  />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </AuthProvider>
+        </AgentModeProvider>
       </ThemeProvider>
     </LanguageProvider>
   </QueryClientProvider>
